@@ -7,7 +7,10 @@
     "node": "24.x"
   },
   "scripts": {
-    "start": "node --no-warnings=ExperimentalWarning server.js"
+    "start": "node --env-file-if-exists=.env server.js"
   },
-  "main": "server.js"
+  "main": "server.js",
+  "dependencies": {
+    "pg": "^8.23.1"
+  }
 }
