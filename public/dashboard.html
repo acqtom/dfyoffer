@@ -1,0 +1,177 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>paidcoaching.com DFY</title>
+  <link rel="icon" type="image/png" href="/favicon.png?v=2">
+  <link rel="apple-touch-icon" href="/apple-touch-icon.png?v=2">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Figtree:wght@600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/styles.css?v=19">
+</head>
+<body>
+  <header class="topbar">
+    <img src="/logo.png" alt="Paidcoaching.com" class="topbar-logo">
+    <div class="topbar-user">
+      <span id="user-name"></span>
+      <button class="btn btn-ghost" id="logout-btn">Log out</button>
+    </div>
+  </header>
+
+  <main class="hub">
+    <section class="hub-head">
+      <div>
+        <span class="tag">Your 30-Day Call Funnel Build</span>
+        <h1>Welcome, <span class="accent" id="first-name"></span></h1>
+        <div class="program-picker">
+          <label for="program-month">Cohort:</label>
+          <div class="select-wrap">
+            <select id="program-month"></select>
+          </div>
+          <span class="program-range" id="program-range"></span>
+        </div>
+      </div>
+      <div class="day-badge" id="day-badge"></div>
+    </section>
+
+    <section class="panel timeline-panel" aria-labelledby="timeline-title">
+      <div class="panel-head">
+        <h2 id="timeline-title">Your build timeline</h2>
+        <div class="progress-label" id="progress-label"></div>
+      </div>
+      <div class="timeline" id="timeline">
+        <div class="timeline-track" id="timeline-track"></div>
+        <div class="timeline-today" id="timeline-today"><span>Today</span></div>
+        <div class="timeline-milestones" id="timeline-milestones"></div>
+      </div>
+    </section>
+
+    <section class="cards" id="cards" aria-label="Program stages"></section>
+  </main>
+
+  <dialog class="modal" id="phase-modal" aria-labelledby="modal-title">
+    <div class="modal-inner">
+      <header class="modal-head">
+        <div class="modal-meta">
+          <span class="tag" id="modal-step"></span>
+          <span id="modal-status"></span>
+        </div>
+        <button type="button" class="modal-close" id="modal-close" aria-label="Close">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>
+        </button>
+      </header>
+
+      <h2 class="modal-title" id="modal-title"></h2>
+      <p class="modal-dates" id="modal-dates"></p>
+      <p class="modal-goal" id="modal-goal"></p>
+      <div class="modal-call" id="modal-call" hidden>
+        <div class="modal-call-icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="6" width="14" height="12" rx="2"/><path d="M16 10l6-3v10l-6-3z"/></svg>
+        </div>
+        <div class="modal-call-text">
+          <span class="modal-call-label" id="modal-call-label"></span>
+          <span class="modal-call-date" id="modal-call-date"></span>
+        </div>
+        <a class="btn btn-primary modal-call-btn" href="https://meet.google.com/wkv-ifex-upa" target="_blank" rel="noopener">Join call <span aria-hidden="true">→</span></a>
+      </div>
+      <p class="modal-blurb" id="modal-blurb"></p>
+
+      <div class="modal-progress">
+        <div class="bar"><div class="bar-fill" id="modal-progress"></div></div>
+        <span id="modal-progress-label"></span>
+      </div>
+
+      <div class="modal-body">
+        <section class="modal-section">
+          <h3>What we'll do</h3>
+          <div id="modal-wedo"></div>
+        </section>
+        <section class="modal-section">
+          <h3>Your action items</h3>
+          <div id="modal-actions"></div>
+        </section>
+        <section class="modal-section modal-section-wide">
+          <h3>Resources</h3>
+          <div id="modal-resources"></div>
+        </section>
+      </div>
+    </div>
+  </dialog>
+
+  <dialog class="form-modal" id="form-modal" aria-label="Form">
+    <div class="form-shell">
+      <header class="form-top">
+        <img src="/logo.png" alt="Paidcoaching.com" class="form-logo">
+        <button type="button" class="modal-close" id="form-close" aria-label="Close form">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>
+        </button>
+      </header>
+      <div class="form-progress" id="form-progress-wrap"><div class="form-progress-fill" id="form-progress"></div></div>
+      <main class="form-stage" id="form-stage"></main>
+      <footer class="form-nav" id="form-nav">
+        <span class="form-count" id="form-count"></span>
+        <div class="form-arrows">
+          <button type="button" class="form-arrow" id="form-prev" aria-label="Previous question">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 15l6-6 6 6"/></svg>
+          </button>
+          <button type="button" class="form-arrow" id="form-next" aria-label="Next question">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg>
+          </button>
+        </div>
+      </footer>
+    </div>
+  </dialog>
+
+  <dialog class="modal resource-modal" id="resource-modal" aria-labelledby="resource-title">
+    <div class="resource-shell">
+      <header class="resource-head">
+        <div id="resource-icon"></div>
+        <div class="resource-heading">
+          <span class="resource-kind" id="resource-kind"></span>
+          <h2 id="resource-title"></h2>
+        </div>
+        <button type="button" class="btn btn-ghost resource-edit" id="resource-edit">Edit</button>
+        <button type="button" class="btn btn-primary resource-copy" id="resource-copy">Copy</button>
+        <button type="button" class="modal-close" id="resource-close" aria-label="Close">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>
+        </button>
+      </header>
+      <p class="resource-note" id="resource-note" hidden></p>
+      <pre class="resource-body" id="resource-body" tabindex="0"></pre>
+      <textarea class="resource-body resource-editor" id="resource-editor" spellcheck="false" aria-label="Edit text" hidden></textarea>
+      <div class="resource-sections" id="resource-sections" hidden></div>
+    </div>
+  </dialog>
+
+  <dialog class="modal video-modal" id="video-modal" aria-labelledby="video-title">
+    <div class="resource-shell">
+      <header class="resource-head">
+        <div class="resource-heading">
+          <span class="resource-kind">Watch how to</span>
+          <h2 id="video-title"></h2>
+        </div>
+        <button type="button" class="modal-close" id="video-close" aria-label="Close">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>
+        </button>
+      </header>
+      <form class="video-link" id="video-link-form" hidden>
+        <label for="video-link-input">Loom link <span>(staff only — clients just see the video)</span></label>
+        <div class="video-link-row">
+          <input type="url" id="video-link-input" name="link" placeholder="https://www.loom.com/share/…" autocomplete="off">
+          <button type="submit" class="btn btn-primary">Load video</button>
+        </div>
+        <p class="form-error" id="video-link-error" role="alert"></p>
+      </form>
+      <div class="video-frame" id="video-frame"></div>
+    </div>
+  </dialog>
+
+  <script src="/api.js?v=19"></script>
+  <script src="/resources.js?v=19"></script>
+  <script src="/forms.js?v=19"></script>
+  <script src="/resource-viewer.js?v=19"></script>
+  <script src="/dashboard.js?v=19"></script>
+</body>
+</html>

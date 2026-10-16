@@ -1,0 +1,11 @@
+{
+  "name": "paidcoaching-hub",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Paidcoaching.com client hub",
+  "main": "server.js",
+  "engines": { "node": ">=22.5" },
+  "scripts": {
+    "start": "node --no-warnings=ExperimentalWarning server.js"
+  }
+}

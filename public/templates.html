@@ -1,0 +1,78 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Templates · paidcoaching.com DFY</title>
+  <link rel="icon" type="image/png" href="/favicon.png?v=2">
+  <link rel="apple-touch-icon" href="/apple-touch-icon.png?v=2">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Figtree:wght@600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/styles.css?v=19">
+</head>
+<body>
+  <header class="topbar">
+    <img src="/logo.png" alt="Paidcoaching.com" class="topbar-logo">
+    <div class="topbar-user">
+      <span class="staff-chip">Staff</span>
+      <button class="btn btn-ghost" id="logout-btn">Log out</button>
+    </div>
+  </header>
+
+  <main class="hub admin">
+    <section class="hub-head">
+      <div>
+        <nav class="admin-tabs" aria-label="Staff pages">
+          <a href="/admin" class="tag tag-ghost">Staff board</a>
+          <a href="/admin/templates" class="tag" aria-current="page">Templates</a>
+        </nav>
+        <h1>Your <span class="accent">templates</span></h1>
+      </div>
+    </section>
+
+    <section class="panel templates-panel" aria-labelledby="week1-templates">
+      <div class="panel-head">
+        <h2 id="week1-templates">Week 1 resources</h2>
+      </div>
+      <ul class="resource-list" id="template-list"></ul>
+    </section>
+
+    <section class="panel videos-panel" aria-labelledby="videos-title">
+      <div class="panel-head">
+        <h2 id="videos-title">How-to videos</h2>
+        <span class="progress-label">Shown on every client's account</span>
+      </div>
+      <div class="video-settings" id="video-settings"></div>
+    </section>
+  </main>
+
+  <dialog class="modal resource-modal" id="resource-modal" aria-labelledby="resource-title">
+    <div class="resource-shell">
+      <header class="resource-head">
+        <div id="resource-icon"></div>
+        <div class="resource-heading">
+          <span class="resource-kind" id="resource-kind"></span>
+          <h2 id="resource-title"></h2>
+        </div>
+        <button type="button" class="btn btn-ghost resource-edit" id="resource-edit">Edit</button>
+        <button type="button" class="btn btn-primary resource-copy" id="resource-copy">Copy</button>
+        <button type="button" class="modal-close" id="resource-close" aria-label="Close">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>
+        </button>
+      </header>
+      <p class="resource-note" id="resource-note" hidden></p>
+      <pre class="resource-body" id="resource-body" tabindex="0"></pre>
+      <textarea class="resource-body resource-editor" id="resource-editor" spellcheck="false" aria-label="Edit text" hidden></textarea>
+      <div class="resource-sections" id="resource-sections" hidden></div>
+    </div>
+  </dialog>
+
+  <div class="toast" id="toast" role="status" hidden></div>
+
+  <script src="/api.js?v=19"></script>
+  <script src="/resources.js?v=19"></script>
+  <script src="/resource-viewer.js?v=19"></script>
+  <script src="/templates.js?v=19"></script>
+</body>
+</html>
