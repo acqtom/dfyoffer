@@ -78,11 +78,21 @@ async function loadClients() {
 
 // ---- Sign-up approvals --------------------------------------------------------
 let pending = [];
+let seenPendingIds = null; // null until the first load, so old requests don't toast
 
 async function loadPending() {
   const res = await fetch('/api/admin/pending');
   if (!res.ok) return;
   ({ pending } = await res.json());
+  const ids = new Set(pending.map((p) => p.id));
+  if (seenPendingIds) {
+    for (const person of pending) {
+      if (!seenPendingIds.has(person.id)) showToast(`New sign-up: ${person.name} — verification needed`);
+    }
+    // Someone was handled in another tab: refresh the client list too.
+    if ([...seenPendingIds].some((id) => !ids.has(id))) loadClients();
+  }
+  seenPendingIds = ids;
   verifyBtn.hidden = pending.length === 0;
   document.getElementById('verify-count').textContent = pending.length;
   renderPending();
@@ -127,6 +137,7 @@ async function decide(person, approve, buttons) {
     return;
   }
   showToast(approve ? `${person.name} accepted — they can log in now` : `${person.name} declined`);
+  seenPendingIds.delete(person.id);
   await Promise.all([loadPending(), loadClients()]);
 }
 
@@ -145,20 +156,17 @@ verifyModal.addEventListener('click', (e) => {
   if (e.target === verifyModal) verifyModal.close();
 });
 
-// Live updates: new sign-ups and decisions made in other tabs.
-const events = new EventSource('/api/admin/events');
-events.addEventListener('pending', (e) => {
-  const person = JSON.parse(e.data);
-  showToast(`New sign-up: ${person.name} — verification needed`);
-  loadPending();
-});
-events.addEventListener('decided', () => {
-  loadPending();
-  loadClients();
+// Check for new sign-ups every few seconds (works on Vercel, where a
+// long-lived connection would be cut off).
+const PENDING_POLL_MS = 5000;
+setInterval(() => {
+  if (!document.hidden) loadPending();
+}, PENDING_POLL_MS);
+document.addEventListener('visibilitychange', () => {
+  if (!document.hidden) loadPending();
 });
 
 document.getElementById('logout-btn').addEventListener('click', async () => {
-  events.close();
   await fetch('/api/logout', { method: 'POST' });
   location.href = '/login';
 });

@@ -4,7 +4,9 @@
   "private": true,
   "description": "Paidcoaching.com client hub",
   "main": "server.js",
-  "engines": { "node": ">=22.5" },
+  "engines": {
+    "node": "24.x"
+  },
   "scripts": {
     "start": "node --no-warnings=ExperimentalWarning server.js"
   }

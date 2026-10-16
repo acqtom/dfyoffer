@@ -1,4 +1,6 @@
-// Paidcoaching.com client hub — zero-dependency Node server (Node 22.5+).
+// Paidcoaching.com client hub — zero-dependency Node server (Node 22.13+).
+// Runs as a normal server locally (`npm start`) and as a Vercel function
+// (api/index.js imports `handler`).
 const http = require('node:http');
 const fs = require('node:fs');
 const path = require('node:path');
@@ -7,7 +9,10 @@ const { DatabaseSync } = require('node:sqlite');
 
 const PORT = process.env.PORT || 3000;
 const PUBLIC_DIR = path.join(__dirname, 'public');
-const DATA_DIR = path.join(__dirname, 'data');
+// Vercel functions can only write to /tmp, which is wiped whenever an instance
+// is recycled — fine for trying things out, not for real data.
+const ON_VERCEL = Boolean(process.env.VERCEL);
+const DATA_DIR = process.env.DATA_DIR || (ON_VERCEL ? '/tmp/paidcoaching-data' : path.join(__dirname, 'data'));
 const SESSION_DAYS = 30;
 
 fs.mkdirSync(DATA_DIR, { recursive: true });
@@ -130,25 +135,12 @@ if (!db.prepare('PRAGMA table_info(users)').all().some((c) => c.name === 'pendin
   db.exec('ALTER TABLE users ADD COLUMN pending_token_hash TEXT');
 }
 const PENDING_DAYS = 14;
-const pendingCookie = (token, maxAgeSeconds) => `pending=${token}; HttpOnly; Path=/; SameSite=Lax; Max-Age=${maxAgeSeconds}`;
+const pendingCookie = (token, maxAgeSeconds) => `pending=${token}; HttpOnly; Path=/; SameSite=Lax${ON_VERCEL ? '; Secure' : ''}; Max-Age=${maxAgeSeconds}`;
 
 const STATUS_MESSAGES = {
   pending: 'Your account is waiting to be accepted. You\'ll be able to log in once our team approves it.',
   rejected: "Your account wasn't approved. Please contact the Paidcoaching.com team.",
 };
-
-// --- Live updates for the staff board (Server-Sent Events) ------------------
-const staffStreams = new Set();
-
-function notifyStaff(event, data) {
-  const message = `event: ${event}\ndata: ${JSON.stringify(data)}\n\n`;
-  for (const stream of staffStreams) stream.write(message);
-}
-
-// Comment lines keep idle connections from being closed by proxies.
-setInterval(() => {
-  for (const stream of staffStreams) stream.write(': ping\n\n');
-}, 25000).unref();
 
 // --- Passwords -------------------------------------------------------------
 function hashPassword(password) {
@@ -188,6 +180,16 @@ async function sendResetEmail(email, link) {
     }),
   });
   if (!res.ok) console.error('Reset email failed:', res.status, await res.text());
+}
+
+// --- Staff account -----------------------------------------------------------
+// A fresh database (e.g. a new Vercel instance) has no accounts yet. If the
+// STAFF_PASSWORD environment variable is set, create the staff account with it.
+if (process.env.STAFF_PASSWORD && !db.prepare('SELECT 1 FROM users WHERE email = ?').get(STAFF_EMAIL)) {
+  const now = new Date();
+  db.prepare(`
+    INSERT INTO users (name, email, password_hash, created_at, program_month, status) VALUES (?, ?, ?, ?, ?, 'approved')
+  `).run('Paidcoaching Staff', STAFF_EMAIL, hashPassword(process.env.STAFF_PASSWORD), now.toISOString(), nextMonthAfter(now));
 }
 
 // --- Sessions --------------------------------------------------------------
@@ -236,8 +238,11 @@ function staffUser(req) {
   return user && isStaff(user) ? user : null;
 }
 
+// Secure (HTTPS-only) when deployed; plain HTTP is fine on localhost.
+const COOKIE_FLAGS = `HttpOnly; Path=/; SameSite=Lax${ON_VERCEL ? '; Secure' : ''}`;
+
 function sessionCookie(token, maxAgeSeconds) {
-  return `sid=${token}; HttpOnly; Path=/; SameSite=Lax; Max-Age=${maxAgeSeconds}`;
+  return `sid=${token}; ${COOKIE_FLAGS}; Max-Age=${maxAgeSeconds}`;
 }
 
 // --- HTTP helpers ----------------------------------------------------------
@@ -338,9 +343,9 @@ async function handle(req, res) {
         INSERT INTO users (name, email, password_hash, created_at, program_month, status, pending_token_hash)
         VALUES (?, ?, ?, ?, ?, 'pending', ?)
       `).run(cleanName, cleanEmail, hashPassword(String(password)), now.toISOString(), nextMonthAfter(now), sha256(pendingToken));
-      // No session yet: the account can't be used until staff accept it. The
-      // pending cookie lets this browser pick up the decision (see signup-status).
-      notifyStaff('pending', { id: Number(lastInsertRowid), name: cleanName, email: cleanEmail, createdAt: now.toISOString() });
+      // No session yet: the account can't be used until staff accept it (the staff
+      // board polls for new requests). The pending cookie lets this browser pick
+      // up the decision (see signup-status).
       return sendJson(res, 201, { pending: true }, { 'Set-Cookie': pendingCookie(pendingToken, PENDING_DAYS * 86400) });
     }
 
@@ -380,7 +385,8 @@ async function handle(req, res) {
         db.prepare('DELETE FROM password_resets WHERE user_id = ? OR expires_at < ?').run(user.id, Date.now());
         db.prepare('INSERT INTO password_resets (token_hash, user_id, expires_at) VALUES (?, ?, ?)')
           .run(sha256(token), user.id, Date.now() + RESET_MINUTES * 60 * 1000);
-        const base = process.env.APP_URL || `http://${req.headers.host}`;
+        const proto = req.headers['x-forwarded-proto'] || 'http';
+        const base = process.env.APP_URL || `${proto}://${req.headers.host}`;
         await sendResetEmail(user.email, `${base}/reset?token=${token}`);
       }
       return sendJson(res, 200, { ok: true });
@@ -450,15 +456,6 @@ async function handle(req, res) {
       return sendJson(res, 200, { pending: rows.map((r) => ({ id: r.id, name: r.name, email: r.email, createdAt: r.created_at })) });
     }
 
-    case 'GET /api/admin/events': {
-      if (!staffUser(req)) return sendJson(res, 403, { error: 'Staff only.' });
-      res.writeHead(200, { 'Content-Type': 'text/event-stream', 'Cache-Control': 'no-cache', Connection: 'keep-alive' });
-      res.write('retry: 3000\n\n');
-      staffStreams.add(res);
-      req.on('close', () => staffStreams.delete(res));
-      return;
-    }
-
     case 'POST /api/program-month': {
       const user = subjectUser(req, url);
       if (!user) return sendJson(res, 401, { error: 'Not logged in' });
@@ -476,7 +473,6 @@ async function handle(req, res) {
     const status = approve ? 'approved' : 'rejected';
     const result = db.prepare("UPDATE users SET status = ? WHERE id = ? AND status = 'pending'").run(status, Number(decisionMatch[1]));
     if (!result.changes) return sendJson(res, 404, { error: 'That request was already handled.' });
-    notifyStaff('decided', { id: Number(decisionMatch[1]), status });
     return sendJson(res, 200, { status });
   }
 
@@ -601,11 +597,18 @@ async function handle(req, res) {
   return notFound(res);
 }
 
-http.createServer((req, res) => {
-  handle(req, res).catch((err) => {
+function handler(req, res) {
+  return handle(req, res).catch((err) => {
     console.error(err);
     if (!res.headersSent) sendJson(res, 500, { error: 'Something went wrong.' });
   });
-}).listen(PORT, () => {
-  console.log(`Paidcoaching hub running at http://localhost:${PORT}`);
-});
+}
+
+module.exports = { handler };
+
+// `node server.js` / `npm start`: run as a normal server.
+if (require.main === module) {
+  http.createServer(handler).listen(PORT, () => {
+    console.log(`Paidcoaching hub running at http://localhost:${PORT}`);
+  });
+}
