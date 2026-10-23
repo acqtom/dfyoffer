@@ -158,6 +158,8 @@ function actionsFor(phase) {
       tick: true,
       done,
       detail: done ? 'Completed' : action.subtitle || 'Tick the box once it\u2019s done',
+      // Uploaded SOP videos get their own label.
+      button: action.video && isSopVideo(action.video) ? 'View SOP' : action.button,
       onClick: action.video ? () => openVideo(action.title, action.video) : undefined,
     });
   }
@@ -439,7 +441,8 @@ function renderLinkResource(resource, editing = false) {
   return tile;
 }
 
-// Loom video pop-up
+// How-to video pop-up: a Loom link or an uploaded SOP video, shared by every
+// client and set by staff on the Templates page.
 const videoModal = document.getElementById('video-modal');
 
 function loomEmbedUrl(link) {
@@ -447,10 +450,7 @@ function loomEmbedUrl(link) {
   return match ? `https://www.loom.com/embed/${match[1]}` : null;
 }
 
-// Loom links for the "Watch how to" videos, shared by every client and set by staff.
-const videoLinks = {};
-let openVideoKey = null;
-let openVideoTitle = '';
+const videoLinks = {}; // key -> { url, kind: 'loom' | 'file', name }
 
 async function loadVideos() {
   const res = await fetch('/api/videos');
@@ -458,60 +458,33 @@ async function loadVideos() {
   Object.assign(videoLinks, data.videos);
 }
 
-function showVideo() {
+const isSopVideo = (key) => videoLinks[key]?.kind === 'file';
+
+function openVideo(title, key) {
+  const video = videoLinks[key];
+  document.getElementById('video-kind').textContent = isSopVideo(key) ? 'SOP video' : 'Watch how to';
+  document.getElementById('video-title').textContent = title;
   const frame = document.getElementById('video-frame');
-  const embed = loomEmbedUrl(videoLinks[openVideoKey]);
-  if (embed) {
+  if (video?.kind === 'file') {
+    const player = document.createElement('video');
+    player.src = video.url;
+    player.controls = true;
+    player.playsInline = true;
+    player.preload = 'metadata';
+    player.setAttribute('aria-label', title);
+    frame.replaceChildren(player);
+  } else if (loomEmbedUrl(video?.url)) {
     const iframe = document.createElement('iframe');
-    iframe.src = embed;
-    iframe.title = openVideoTitle;
+    iframe.src = loomEmbedUrl(video.url);
+    iframe.title = title;
     iframe.allow = 'fullscreen';
     iframe.allowFullscreen = true;
     frame.replaceChildren(iframe);
   } else {
     frame.replaceChildren(el('p', 'video-empty', 'Video coming soon'));
   }
-}
-
-function openVideo(title, key) {
-  openVideoKey = key;
-  openVideoTitle = title;
-  document.getElementById('video-title').textContent = title;
-  const form = document.getElementById('video-link-form');
-  form.hidden = !currentUser.isStaff;
-  form.link.value = videoLinks[key] || '';
-  document.getElementById('video-link-error').textContent = '';
-  showVideo();
   videoModal.showModal();
 }
-
-document.getElementById('video-link-form').addEventListener('submit', async (e) => {
-  e.preventDefault();
-  const form = e.target;
-  const error = document.getElementById('video-link-error');
-  const link = form.link.value.trim();
-  error.textContent = '';
-  if (!loomEmbedUrl(link)) {
-    error.textContent = 'Please paste a Loom link (loom.com/share/…).';
-    return;
-  }
-  form.querySelector('button').disabled = true;
-  try {
-    const res = await fetch(`/api/videos/${openVideoKey}`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ url: link }),
-    });
-    const data = await res.json();
-    if (!res.ok) throw new Error(data.error);
-    videoLinks[openVideoKey] = data.url;
-    showVideo();
-  } catch (err) {
-    error.textContent = err.message || "Couldn't save the link. Please try again.";
-  } finally {
-    form.querySelector('button').disabled = false;
-  }
-});
 
 // Stop playback when the pop-up closes.
 videoModal.addEventListener('close', () => document.getElementById('video-frame').replaceChildren());
