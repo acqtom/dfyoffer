@@ -158,7 +158,7 @@ function actionsFor(phase) {
       tick: true,
       done,
       detail: done ? 'Completed' : action.subtitle || 'Tick the box once it\u2019s done',
-      // Uploaded SOP videos get their own label.
+      // Embedded SOP videos get their own label.
       button: action.video && isSopVideo(action.video) ? 'View SOP' : action.button,
       onClick: action.video ? () => openVideo(action.title, action.video) : undefined,
     });
@@ -441,8 +441,8 @@ function renderLinkResource(resource, editing = false) {
   return tile;
 }
 
-// How-to video pop-up: a Loom link or an uploaded SOP video, shared by every
-// client and set by staff on the Templates page.
+// How-to video pop-up: a Loom link or an embedded SOP video (from pasted embed
+// code), shared by every client and set by staff on the Templates page.
 const videoModal = document.getElementById('video-modal');
 
 function loomEmbedUrl(link) {
@@ -450,7 +450,7 @@ function loomEmbedUrl(link) {
   return match ? `https://www.loom.com/embed/${match[1]}` : null;
 }
 
-const videoLinks = {}; // key -> { url, kind: 'loom' | 'file', name }
+const videoLinks = {}; // key -> { url, kind: 'loom' | 'embed' }
 
 async function loadVideos() {
   const res = await fetch('/api/videos');
@@ -458,26 +458,21 @@ async function loadVideos() {
   Object.assign(videoLinks, data.videos);
 }
 
-const isSopVideo = (key) => videoLinks[key]?.kind === 'file';
+const isSopVideo = (key) => videoLinks[key]?.kind === 'embed';
 
 function openVideo(title, key) {
   const video = videoLinks[key];
   document.getElementById('video-kind').textContent = isSopVideo(key) ? 'SOP video' : 'Watch how to';
   document.getElementById('video-title').textContent = title;
   const frame = document.getElementById('video-frame');
-  if (video?.kind === 'file') {
-    const player = document.createElement('video');
-    player.src = video.url;
-    player.controls = true;
-    player.playsInline = true;
-    player.preload = 'metadata';
-    player.setAttribute('aria-label', title);
-    frame.replaceChildren(player);
-  } else if (loomEmbedUrl(video?.url)) {
+  // Embed code is stored as just its iframe address; Loom share links are
+  // turned into Loom's embed address.
+  const src = video?.kind === 'embed' ? video.url : loomEmbedUrl(video?.url);
+  if (src) {
     const iframe = document.createElement('iframe');
-    iframe.src = loomEmbedUrl(video.url);
+    iframe.src = src;
     iframe.title = title;
-    iframe.allow = 'fullscreen';
+    iframe.allow = 'fullscreen; autoplay; encrypted-media; picture-in-picture';
     iframe.allowFullscreen = true;
     frame.replaceChildren(iframe);
   } else {
@@ -487,7 +482,10 @@ function openVideo(title, key) {
 }
 
 // Stop playback when the pop-up closes.
-videoModal.addEventListener('close', () => document.getElementById('video-frame').replaceChildren());
+// The close event fires a moment later, so skip it if the pop-up was reopened.
+videoModal.addEventListener('close', () => {
+  if (!videoModal.open) document.getElementById('video-frame').replaceChildren();
+});
 document.getElementById('video-close').addEventListener('click', () => videoModal.close());
 videoModal.addEventListener('click', (e) => {
   if (e.target === videoModal) videoModal.close();

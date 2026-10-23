@@ -18,8 +18,8 @@ function showToast(message) {
 }
 
 // ---- How-to videos (shared by every client) -----------------------------------
-// Each one is a Loom link or an uploaded video file. Uploaded files show on
-// client pages as "View SOP". Keys match VIDEO_KEYS on the server and the
+// Each one is a Loom link or pasted embed code (YouTube, Vimeo, Wistia, …).
+// Embedded videos show on client pages as "View SOP". Keys match VIDEO_KEYS on the server and the
 // `video` on each action in dashboard.js.
 const VIDEOS = [
   { key: 'complete-funnel', title: 'Complete your funnel', where: 'Weeks 1 & 2' },
@@ -29,23 +29,8 @@ const LOOM_RE = /loom\.com\/(?:share|embed)\/[a-zA-Z0-9]+/;
 
 function statusText(video) {
   if (!video) return ['video-status', 'Not set — clients see "Video coming soon"'];
-  if (video.kind === 'file') return ['video-status video-status-set', `✓ Video uploaded (${video.name || 'video'}) — clients see "View SOP"`];
+  if (video.kind === 'embed') return ['video-status video-status-set', '✓ Embedded video live — clients see "View SOP"'];
   return ['video-status video-status-set', '✓ Loom link live for all clients'];
-}
-
-// Uploads straight to Supabase Storage, reporting progress (0–1).
-function uploadFile(uploadUrl, file, onProgress) {
-  return new Promise((resolve, reject) => {
-    const xhr = new XMLHttpRequest();
-    xhr.open('PUT', uploadUrl);
-    xhr.setRequestHeader('Content-Type', file.type || 'video/mp4');
-    xhr.upload.addEventListener('progress', (e) => e.lengthComputable && onProgress(e.loaded / e.total));
-    xhr.addEventListener('load', () => (xhr.status < 300 ? resolve() : reject(new Error(
-      xhr.status === 413 ? 'That file is too big for your Supabase plan (50 MB max on the free plan).' : 'Upload failed. Please try again.',
-    ))));
-    xhr.addEventListener('error', () => reject(new Error('Upload failed. Check your connection and try again.')));
-    xhr.send(file);
-  });
 }
 
 async function saveVideo(key, body) {
@@ -69,10 +54,10 @@ function videoRow(video, current) {
   modes.setAttribute('role', 'group');
   modes.setAttribute('aria-label', `How to add the ${video.title} video`);
   const loomTab = el('button', 'video-mode', 'Loom link');
-  const fileTab = el('button', 'video-mode', 'Upload video');
+  const embedTab = el('button', 'video-mode', 'Embed code');
   loomTab.type = 'button';
-  fileTab.type = 'button';
-  modes.append(loomTab, fileTab);
+  embedTab.type = 'button';
+  modes.append(loomTab, embedTab);
 
   const status = el('span');
   const setStatus = (cls, text) => { status.className = cls; status.textContent = text; };
@@ -104,64 +89,45 @@ function videoRow(video, current) {
     }
   });
 
-  // Upload panel
-  const fileForm = el('form', 'video-panel video-panel-file');
-  const fileInput = el('input');
-  fileInput.type = 'file';
-  fileInput.accept = 'video/*';
-  fileInput.setAttribute('aria-label', `Video file for ${video.title}`);
-  const upload = el('button', 'btn btn-primary', 'Upload');
-  upload.type = 'submit';
-  const progress = el('div', 'video-progress');
-  const bar = el('div', 'video-progress-fill');
-  progress.append(bar);
-  progress.hidden = true;
-  fileForm.append(fileInput, upload, progress);
-  fileForm.addEventListener('submit', async (e) => {
+  // Embed code panel
+  const embedForm = el('form', 'video-panel');
+  const code = el('textarea', 'video-embed');
+  code.rows = 3;
+  code.spellcheck = false;
+  code.placeholder = '<iframe src="https://www.youtube.com/embed/…" …></iframe>';
+  code.value = current?.kind === 'embed' ? current.code || '' : '';
+  code.setAttribute('aria-label', `Embed code for ${video.title}`);
+  const saveEmbed = el('button', 'btn btn-primary', 'Save');
+  saveEmbed.type = 'submit';
+  embedForm.append(code, saveEmbed);
+  embedForm.addEventListener('submit', async (e) => {
     e.preventDefault();
-    const file = fileInput.files[0];
-    if (!file) return setStatus('video-status video-status-error', 'Choose a video file first.');
-    upload.disabled = true;
-    fileInput.disabled = true;
-    progress.hidden = false;
-    bar.style.width = '0%';
-    setStatus('video-status', `Uploading ${file.name}…`);
+    if (!/<iframe\b/i.test(code.value)) {
+      return setStatus('video-status video-status-error', 'Paste the embed code — it should start with <iframe');
+    }
+    saveEmbed.disabled = true;
     try {
-      const res = await fetch(`/api/videos/${video.key}/upload-url`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name: file.name }),
-      });
-      const target = await res.json();
-      if (!res.ok) throw new Error(target.error);
-      await uploadFile(target.uploadUrl, file, (p) => {
-        bar.style.width = `${Math.round(p * 100)}%`;
-        setStatus('video-status', `Uploading ${file.name}… ${Math.round(p * 100)}%`);
-      });
-      const saved = await saveVideo(video.key, { kind: 'file', url: target.publicUrl, name: file.name });
+      const saved = await saveVideo(video.key, { kind: 'embed', code: code.value });
       setStatus(...statusText(saved));
-      showToast(`"${video.title}" video uploaded for every client`);
-      fileForm.reset();
+      showToast(`"${video.title}" embedded video saved for every client`);
     } catch (err) {
       setStatus('video-status video-status-error', err.message);
     } finally {
-      upload.disabled = false;
-      fileInput.disabled = false;
-      progress.hidden = true;
+      saveEmbed.disabled = false;
     }
   });
 
   const showMode = (mode) => {
     loomTab.setAttribute('aria-pressed', String(mode === 'loom'));
-    fileTab.setAttribute('aria-pressed', String(mode === 'file'));
+    embedTab.setAttribute('aria-pressed', String(mode === 'embed'));
     loomForm.hidden = mode !== 'loom';
-    fileForm.hidden = mode !== 'file';
+    embedForm.hidden = mode !== 'embed';
   };
   loomTab.addEventListener('click', () => showMode('loom'));
-  fileTab.addEventListener('click', () => showMode('file'));
-  showMode(current?.kind === 'file' ? 'file' : 'loom');
+  embedTab.addEventListener('click', () => showMode('embed'));
+  showMode(current?.kind === 'embed' ? 'embed' : 'loom');
 
-  row.append(label, modes, loomForm, fileForm, status);
+  row.append(label, modes, loomForm, embedForm, status);
   return row;
 }
 
