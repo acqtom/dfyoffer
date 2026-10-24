@@ -47,22 +47,8 @@ window.RESOURCE_SECTIONS = {
 // replace each with the real script or code. Users can edit their own copy,
 // which is saved to their account.
 window.RESOURCE_CONTENT = {
-  'scaling-roadmap': `PLACEHOLDER — your team will fill in your scaling roadmap
-
-1. WHERE YOU ARE NOW
-[Ad spend, show rate, close rate, AOV, cash collected and ROAS.]
-
-2. WHAT'S WORKING
-[Winning ads, angles and parts of the funnel to double down on.]
-
-3. WHAT TO FIX FIRST
-[The biggest bottleneck and how we'll fix it.]
-
-4. YOUR SCALING PLAN
-[Budget steps, timeline and the numbers to hit at each step.]
-
-5. NEXT 30 DAYS
-[The exact actions for you and for us.]`,
+  // Starts empty; staff write each client's roadmap.
+  'scaling-roadmap': '',
 
   // Starts empty; staff write each client's report.
   'offer-translation-report': '',
