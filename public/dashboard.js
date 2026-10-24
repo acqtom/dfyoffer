@@ -201,9 +201,11 @@ function actionsFor(phase) {
 // ---- Embed resources pop-up ---------------------------------------------------
 // Clients paste the embed code for each of their videos and their form. Saved to
 // their account (form key 'embeds'); staff see it on the client's page.
+// FAQs are a list: each FAQ video has its own title and embed code, saved as a
+// JSON array in the 'faqs' answer.
 const EMBED_FIELDS = [
   { id: 'vsl', label: 'VSL' },
-  { id: 'faqs', label: 'FAQs', hint: 'Paste all of your FAQ video embeds here' },
+  { id: 'faqs', label: 'FAQs', list: true, hint: 'Add each FAQ video separately, with a title for each' },
   { id: 'confirmation_video', label: 'Confirmation page video' },
   { id: 'form', label: 'Form' },
 ];
@@ -215,19 +217,77 @@ async function loadEmbeds() {
   embedSubmission = data.answers ? data : null;
 }
 
+function savedFaqs() {
+  const raw = embedSubmission?.answers.faqs;
+  if (!raw) return [];
+  try {
+    const list = JSON.parse(raw);
+    if (Array.isArray(list)) return list;
+  } catch { /* saved before FAQs were a list: one untitled entry */ }
+  return [{ title: '', code: raw }];
+}
+
+function embedBox(name, label, value) {
+  const box = el('textarea', 'embed-input');
+  box.name = name;
+  box.rows = 3;
+  box.spellcheck = false;
+  box.placeholder = `Paste your ${label} embed code`;
+  box.value = value || '';
+  return box;
+}
+
+function faqRow(faq, list) {
+  const row = el('div', 'faq-row');
+  const head = el('div', 'faq-row-head');
+  const title = el('input', 'faq-title');
+  title.type = 'text';
+  title.placeholder = 'FAQ title, e.g. "What does it cost?"';
+  title.value = faq.title || '';
+  title.setAttribute('aria-label', 'FAQ title');
+  const remove = el('button', 'faq-remove', 'Remove');
+  remove.type = 'button';
+  remove.addEventListener('click', () => {
+    row.remove();
+    updateFaqNumbers(list);
+  });
+  head.append(el('span', 'faq-number'), title, remove);
+  row.append(head, embedBox('faq-code', 'FAQ', faq.code));
+  return row;
+}
+
+// Number the FAQs, and only allow removing when there's more than one.
+function updateFaqNumbers(list) {
+  const rows = [...list.children];
+  rows.forEach((row, i) => {
+    row.querySelector('.faq-number').textContent = `FAQ ${i + 1}`;
+    row.querySelector('.faq-remove').hidden = rows.length === 1;
+  });
+}
+
 function openEmbeds() {
   const fields = document.getElementById('embeds-fields');
   fields.replaceChildren(...EMBED_FIELDS.map((field) => {
-    const wrap = el('label', 'embed-field');
+    const wrap = el(field.list ? 'div' : 'label', 'embed-field');
     wrap.append(el('span', 'embed-label', field.label));
     if (field.hint) wrap.append(el('span', 'embed-hint', field.hint));
-    const box = el('textarea', 'embed-input');
-    box.name = field.id;
-    box.rows = 4;
-    box.spellcheck = false;
-    box.placeholder = `Paste your ${field.label} embed code`;
-    box.value = embedSubmission?.answers[field.id] || '';
-    wrap.append(box);
+    if (field.list) {
+      const list = el('div', 'faq-list');
+      const faqs = savedFaqs();
+      for (const faq of faqs.length ? faqs : [{}]) list.append(faqRow(faq, list));
+      updateFaqNumbers(list);
+      const add = el('button', 'faq-add', '+ Add another FAQ');
+      add.type = 'button';
+      add.addEventListener('click', () => {
+        const row = faqRow({}, list);
+        list.append(row);
+        updateFaqNumbers(list);
+        row.querySelector('.faq-title').focus();
+      });
+      wrap.append(list, add);
+    } else {
+      wrap.append(embedBox(field.id, field.label, embedSubmission?.answers[field.id]));
+    }
     return wrap;
   }));
   document.getElementById('embeds-error').textContent = '';
@@ -239,12 +299,29 @@ document.getElementById('embeds-form').addEventListener('submit', async (e) => {
   e.preventDefault();
   const error = document.getElementById('embeds-error');
   const submit = document.getElementById('embeds-submit');
-  const answers = Object.fromEntries(EMBED_FIELDS.map((f) => [f.id, e.target.elements[f.id].value.trim()]));
-  const missing = EMBED_FIELDS.filter((f) => !answers[f.id]).map((f) => f.label);
+  const form = e.target;
+  const faqs = [...form.querySelectorAll('.faq-row')].map((row) => ({
+    title: row.querySelector('.faq-title').value.trim(),
+    code: row.querySelector('.embed-input').value.trim(),
+  })).filter((faq) => faq.title || faq.code);
+  const answers = {};
+  const missing = [];
+  for (const field of EMBED_FIELDS) {
+    if (field.list) continue;
+    answers[field.id] = form.elements[field.id].value.trim();
+    if (!answers[field.id]) missing.push(field.label);
+  }
+  if (!faqs.length) missing.push('FAQs');
   if (missing.length) {
     error.textContent = `Please paste your ${missing.join(', ')} embed code${missing.length > 1 ? 's' : ''}.`;
     return;
   }
+  const incomplete = faqs.findIndex((faq) => !faq.title || !faq.code);
+  if (incomplete !== -1) {
+    error.textContent = `FAQ ${incomplete + 1} needs both a title and its embed code.`;
+    return;
+  }
+  answers.faqs = JSON.stringify(faqs);
   submit.disabled = true;
   try {
     const res = await apiFetch('/api/forms/embeds', {

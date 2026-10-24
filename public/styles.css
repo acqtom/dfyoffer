@@ -685,6 +685,38 @@ button.resource:hover .resource-open { text-decoration: underline; }
   background: var(--bg);
 }
 .embed-input:focus { border-color: var(--brand); box-shadow: 0 0 0 3px var(--brand-soft); background: var(--surface); }
+.faq-list { display: grid; gap: 12px; }
+.faq-row { display: grid; gap: 8px; padding: 12px; border: 1.5px solid var(--line); border-radius: 10px; background: var(--surface); }
+.faq-row-head { display: flex; align-items: center; gap: 10px; }
+.faq-number { flex: none; font-family: var(--heading); font-weight: 800; font-size: 13px; color: var(--brand); }
+.faq-title {
+  flex: 1;
+  min-width: 0;
+  font: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  padding: 8px 10px;
+  border: 1.5px solid var(--border);
+  border-radius: 8px;
+  outline: none;
+}
+.faq-title:focus { border-color: var(--brand); box-shadow: 0 0 0 3px var(--brand-soft); }
+.faq-remove { flex: none; font: inherit; font-size: 13px; font-weight: 600; color: var(--error); background: none; border: 0; cursor: pointer; padding: 4px; }
+.faq-remove[hidden] { display: none; }
+.faq-add {
+  justify-self: start;
+  font: inherit;
+  font-family: var(--heading);
+  font-weight: 700;
+  font-size: 14px;
+  color: var(--brand);
+  background: var(--brand-soft);
+  border: 1.5px dashed var(--brand);
+  border-radius: 8px;
+  padding: 8px 14px;
+  cursor: pointer;
+}
+.faq-add:hover { background: var(--surface); }
 .embeds-foot { display: flex; align-items: center; justify-content: flex-end; gap: 14px; padding: 16px 28px; border-top: 2px solid var(--border); }
 .embeds-foot .form-error { flex: 1; margin: 0; }
 .embeds-foot .btn { width: auto; padding: 11px 24px; }
