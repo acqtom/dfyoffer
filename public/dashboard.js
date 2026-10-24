@@ -14,13 +14,13 @@
 const BUILD_ACTIONS = [
   { key: 'film-videos', title: 'Film your VSL, confirmation page video, and FAQ videos' },
   {
-    key: 'complete-funnel',
-    title: 'Complete your funnel',
-    subtitle: 'Upload your videos, add your form, connect your domain, and get live',
-    button: 'Watch how to',
-    video: 'complete-funnel',
+    key: 'embeds',
+    title: 'Send all of your embed resources',
+    subtitle: 'VSL, FAQs, confirmation page video, form',
+    embedForm: true,
   },
   { key: 'film-ads', title: 'Film your ads', button: 'Watch how to', video: 'film-ads' },
+  { key: 'page-live', title: 'Get your page live with your domain', button: 'Watch now', video: 'page-live', fixedButton: true },
 ];
 
 // What we do in Sprint · Days 15–end.
@@ -172,6 +172,18 @@ function actionsFor(phase) {
     });
   }
   for (const action of phase.actions || []) {
+    if (action.embedForm) {
+      // Done once they've submitted their embed codes; they can still edit them.
+      const done = Boolean(embedSubmission);
+      items.push({
+        title: action.title,
+        detail: done ? 'Submitted — click Edit to change' : action.subtitle,
+        done,
+        button: done ? 'Edit' : 'Paste here',
+        onClick: openEmbeds,
+      });
+      continue;
+    }
     const done = completedActions.has(action.key);
     items.push({
       ...action,
@@ -179,12 +191,82 @@ function actionsFor(phase) {
       done,
       detail: done ? 'Completed' : action.subtitle || 'Tick the box once it\u2019s done',
       // Embedded SOP videos get their own label.
-      button: action.video && isSopVideo(action.video) ? 'View SOP' : action.button,
+      button: action.video && isSopVideo(action.video) && !action.fixedButton ? 'View SOP' : action.button,
       onClick: action.video ? () => openVideo(action.title, action.video) : undefined,
     });
   }
   return items;
 }
+
+// ---- Embed resources pop-up ---------------------------------------------------
+// Clients paste the embed code for each of their videos and their form. Saved to
+// their account (form key 'embeds'); staff see it on the client's page.
+const EMBED_FIELDS = [
+  { id: 'vsl', label: 'VSL' },
+  { id: 'faqs', label: 'FAQs', hint: 'Paste all of your FAQ video embeds here' },
+  { id: 'confirmation_video', label: 'Confirmation page video' },
+  { id: 'form', label: 'Form' },
+];
+const embedsModal = document.getElementById('embeds-modal');
+let embedSubmission = null; // { answers, submittedAt } once submitted
+
+async function loadEmbeds() {
+  const data = await (await apiFetch('/api/forms/embeds')).json();
+  embedSubmission = data.answers ? data : null;
+}
+
+function openEmbeds() {
+  const fields = document.getElementById('embeds-fields');
+  fields.replaceChildren(...EMBED_FIELDS.map((field) => {
+    const wrap = el('label', 'embed-field');
+    wrap.append(el('span', 'embed-label', field.label));
+    if (field.hint) wrap.append(el('span', 'embed-hint', field.hint));
+    const box = el('textarea', 'embed-input');
+    box.name = field.id;
+    box.rows = 4;
+    box.spellcheck = false;
+    box.placeholder = `Paste your ${field.label} embed code`;
+    box.value = embedSubmission?.answers[field.id] || '';
+    wrap.append(box);
+    return wrap;
+  }));
+  document.getElementById('embeds-error').textContent = '';
+  document.getElementById('embeds-submit').textContent = embedSubmission ? 'Save changes' : 'Submit';
+  embedsModal.showModal();
+}
+
+document.getElementById('embeds-form').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const error = document.getElementById('embeds-error');
+  const submit = document.getElementById('embeds-submit');
+  const answers = Object.fromEntries(EMBED_FIELDS.map((f) => [f.id, e.target.elements[f.id].value.trim()]));
+  const missing = EMBED_FIELDS.filter((f) => !answers[f.id]).map((f) => f.label);
+  if (missing.length) {
+    error.textContent = `Please paste your ${missing.join(', ')} embed code${missing.length > 1 ? 's' : ''}.`;
+    return;
+  }
+  submit.disabled = true;
+  try {
+    const res = await apiFetch('/api/forms/embeds', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ answers }),
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || "Couldn't save. Please try again.");
+    embedSubmission = data;
+    embedsModal.close();
+    refreshAfterActionChange();
+  } catch (err) {
+    error.textContent = err.message;
+  } finally {
+    submit.disabled = false;
+  }
+});
+document.getElementById('embeds-close').addEventListener('click', () => embedsModal.close());
+embedsModal.addEventListener('click', (e) => {
+  if (e.target === embedsModal) embedsModal.close();
+});
 
 async function setActionDone(key, done) {
   if (done) completedActions.add(key); else completedActions.delete(key);
@@ -720,5 +802,7 @@ apiFetch('/api/me')
     renderMonthPicker(user);
     render(user);
     // Progress depends on action items, so re-render once they're loaded.
-    Promise.all([Forms.loadAll(), loadActions(), ResourceViewer.load('client'), loadVideos(), loadFiles()]).then(() => render(user)).catch(() => {});
+    Promise.all([Forms.loadAll(), loadActions(), ResourceViewer.load('client'), loadVideos(), loadFiles(), loadEmbeds()])
+      // Re-render, including any stage pop-up opened before loading finished.
+      .then(() => refreshAfterActionChange()).catch(() => {});
   });

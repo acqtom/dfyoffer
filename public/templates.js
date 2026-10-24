@@ -22,8 +22,8 @@ function showToast(message) {
 // Embedded videos show on client pages as "View SOP". Keys match VIDEO_KEYS on the server and the
 // `video` on each action in dashboard.js.
 const VIDEOS = [
-  { key: 'complete-funnel', title: 'Complete your funnel', where: 'Build & Sprint Days 1–14' },
   { key: 'film-ads', title: 'Film your ads', where: 'Build & Sprint Days 1–14' },
+  { key: 'page-live', title: 'Get your page live with your domain', where: 'Build & Sprint Days 1–14' },
 ];
 const LOOM_RE = /loom\.com\/(?:share|embed)\/[a-zA-Z0-9]+/;
 
