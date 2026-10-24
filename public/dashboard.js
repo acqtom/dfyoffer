@@ -441,8 +441,8 @@ function renderLinkResource(resource, editing = false) {
   return tile;
 }
 
-// How-to video pop-up: a Loom link or an embedded SOP video (from pasted embed
-// code), shared by every client and set by staff on the Templates page.
+// How-to video pop-up: a Loom link or an embedded SOP video (pasted embed code),
+// shared by every client and set by staff on the Templates page.
 const videoModal = document.getElementById('video-modal');
 
 function loomEmbedUrl(link) {
@@ -450,7 +450,7 @@ function loomEmbedUrl(link) {
   return match ? `https://www.loom.com/embed/${match[1]}` : null;
 }
 
-const videoLinks = {}; // key -> { url, kind: 'loom' | 'embed' }
+const videoLinks = {}; // key -> { kind: 'loom', url } | { kind: 'embed', code }
 
 async function loadVideos() {
   const res = await fetch('/api/videos');
@@ -460,17 +460,46 @@ async function loadVideos() {
 
 const isSopVideo = (key) => videoLinks[key]?.kind === 'embed';
 
+// Shows pasted embed code. Script-based players (VTurb, Wistia, …) run in a
+// sandboxed frame without allow-same-origin, so the frame gets its own
+// throwaway origin: the player's scripts run, but they can't read or change
+// this page, its storage or the client's account.
+function embedFrame(title, code) {
+  // A plain <iframe> embed (YouTube, Vimeo, …) is shown directly from its
+  // https address — those players often refuse to load inside a sandbox.
+  const doc = new DOMParser().parseFromString(code, 'text/html');
+  const plain = doc.querySelector('iframe[src^="https://"]');
+  if (plain && !doc.querySelector('script')) {
+    const direct = document.createElement('iframe');
+    direct.src = plain.getAttribute('src');
+    direct.title = title;
+    direct.allow = 'fullscreen; autoplay; encrypted-media; picture-in-picture';
+    direct.allowFullscreen = true;
+    return direct;
+  }
+  const iframe = document.createElement('iframe');
+  iframe.title = title;
+  iframe.setAttribute('sandbox', 'allow-scripts allow-presentation allow-popups allow-popups-to-escape-sandbox');
+  iframe.allow = 'fullscreen; autoplay; encrypted-media; picture-in-picture';
+  iframe.allowFullscreen = true;
+  iframe.srcdoc = `<!doctype html><html><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>html,body{margin:0;height:100%;background:#16181d}body{display:flex;align-items:center;justify-content:center;padding:12px;box-sizing:border-box;overflow:auto}body>*{max-width:100%;max-height:100%}</style>
+</head><body>${code}</body></html>`;
+  return iframe;
+}
+
 function openVideo(title, key) {
   const video = videoLinks[key];
   document.getElementById('video-kind').textContent = isSopVideo(key) ? 'SOP video' : 'Watch how to';
   document.getElementById('video-title').textContent = title;
   const frame = document.getElementById('video-frame');
-  // Embed code is stored as just its iframe address; Loom share links are
-  // turned into Loom's embed address.
-  const src = video?.kind === 'embed' ? video.url : loomEmbedUrl(video?.url);
-  if (src) {
+  frame.classList.toggle('video-frame-embed', video?.kind === 'embed');
+  if (video?.kind === 'embed' && video.code) {
+    frame.replaceChildren(embedFrame(title, video.code));
+  } else if (loomEmbedUrl(video?.url)) {
     const iframe = document.createElement('iframe');
-    iframe.src = src;
+    iframe.src = loomEmbedUrl(video.url);
     iframe.title = title;
     iframe.allow = 'fullscreen; autoplay; encrypted-media; picture-in-picture';
     iframe.allowFullscreen = true;

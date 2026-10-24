@@ -18,7 +18,7 @@ function showToast(message) {
 }
 
 // ---- How-to videos (shared by every client) -----------------------------------
-// Each one is a Loom link or pasted embed code (YouTube, Vimeo, Wistia, …).
+// Each one is a Loom link or pasted embed code (VTurb, YouTube, Vimeo, Wistia, …).
 // Embedded videos show on client pages as "View SOP". Keys match VIDEO_KEYS on the server and the
 // `video` on each action in dashboard.js.
 const VIDEOS = [
@@ -94,7 +94,7 @@ function videoRow(video, current) {
   const code = el('textarea', 'video-embed');
   code.rows = 3;
   code.spellcheck = false;
-  code.placeholder = '<iframe src="https://www.youtube.com/embed/…" …></iframe>';
+  code.placeholder = 'Paste the embed code from VTurb, YouTube, Vimeo, Wistia…';
   code.value = current?.kind === 'embed' ? current.code || '' : '';
   code.setAttribute('aria-label', `Embed code for ${video.title}`);
   const saveEmbed = el('button', 'btn btn-primary', 'Save');
@@ -102,8 +102,8 @@ function videoRow(video, current) {
   embedForm.append(code, saveEmbed);
   embedForm.addEventListener('submit', async (e) => {
     e.preventDefault();
-    if (!/<iframe\b/i.test(code.value)) {
-      return setStatus('video-status video-status-error', 'Paste the embed code — it should start with <iframe');
+    if (!/<[a-z]/i.test(code.value)) {
+      return setStatus('video-status video-status-error', 'Paste the embed code from your video platform.');
     }
     saveEmbed.disabled = true;
     try {
