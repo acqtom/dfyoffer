@@ -24,6 +24,7 @@ function showToast(message) {
 const VIDEOS = [
   { key: 'complete-funnel', title: 'Complete your funnel', where: 'Weeks 1 & 2' },
   { key: 'film-ads', title: 'Film your ads', where: 'Weeks 1 & 2' },
+  { key: 'editor-sop', title: 'Editor SOP', where: 'Week 1 resources' },
 ];
 const LOOM_RE = /loom\.com\/(?:share|embed)\/[a-zA-Z0-9]+/;
 

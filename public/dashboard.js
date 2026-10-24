@@ -43,7 +43,11 @@ function phasesFor(daysInMonth) {
       ] },
     { name: 'Week 1',           call: 'End-of-week call', short: 'W1',    startDay: 1,  endDay: 7,
       goal: 'Cold Funnel Set Up Complete, New Ad Scripts Ready',
-      resources: WEEK1_RESOURCES,
+      resources: [
+        ...WEEK1_RESOURCES,
+        // A how-to video set by staff on Templates (Loom link or embed code).
+        { key: 'editor-sop', title: 'Editor SOP', kind: 'video', type: 'video', video: 'editor-sop' },
+      ],
       weDo: WEEK1_RESOURCES.map((r) => ({ key: `build-${r.key}`, title: r.title })),
       actions: BUILD_ACTIONS,
       actionsNote: 'Due by day 14, no rush!' },
@@ -376,11 +380,32 @@ function renderResources(resources) {
       list.append(item);
       continue;
     }
+    if (resource.type === 'video') {
+      const item = el('li');
+      item.append(renderVideoResource(resource));
+      list.append(item);
+      continue;
+    }
     const item = el('li');
     item.append(ResourceViewer.tile(resource));
     list.append(item);
   }
   box.replaceChildren(list);
+}
+
+// A resource that's a how-to video: opens the video pop-up.
+function renderVideoResource(resource) {
+  const ready = Boolean(videoLinks[resource.video]);
+  const tile = el(ready ? 'button' : 'div', 'resource');
+  tile.append(ResourceViewer.icon(resource.kind), el('strong', 'resource-title', resource.title));
+  if (ready) {
+    tile.type = 'button';
+    tile.addEventListener('click', () => openVideo(resource.title, resource.video));
+    tile.append(el('span', 'resource-open', 'View SOP →'));
+  } else {
+    tile.append(el('span', 'pill pill-upcoming', 'Coming soon'));
+  }
+  return tile;
 }
 
 const DRIVE_RE = /^https:\/\/(drive|docs)\.google\.com\//;
