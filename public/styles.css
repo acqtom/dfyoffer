@@ -588,8 +588,9 @@ body.modal-open { overflow: hidden; }
 .resource-icon svg { width: 22px; height: 22px; }
 .resource-title { font-family: var(--heading); font-size: 16px; }
 .resource > .pill, .resource-open { grid-column: 1 / -1; justify-self: start; }
-button.resource { cursor: pointer; transition: transform .15s, box-shadow .15s, background .15s; }
-button.resource:hover, button.resource:focus-visible { transform: translate(-2px, -2px); box-shadow: 4px 4px 0 var(--border); background: var(--surface); outline: none; }
+a.resource { color: inherit; text-decoration: none; }
+a.resource, button.resource { cursor: pointer; transition: transform .15s, box-shadow .15s, background .15s; }
+button.resource:hover, button.resource:focus-visible, a.resource:hover, a.resource:focus-visible { transform: translate(-2px, -2px); box-shadow: 4px 4px 0 var(--border); background: var(--surface); outline: none; }
 button.resource:active { transform: translate(1px, 1px); box-shadow: 1px 1px 0 var(--border); }
 .resource-open { font-family: var(--heading); font-weight: 700; font-size: 14px; color: var(--brand); }
 button.resource:hover .resource-open { text-decoration: underline; }
@@ -923,6 +924,9 @@ button.resource.resource-shared:hover, button.resource.resource-shared:focus-vis
 }
 .resource-prompt-btn:hover { background: var(--ink); color: #fff; }
 .resource-prompt-btn:active { transform: translate(1px, 1px); box-shadow: 1px 1px 0 var(--border); }
+.pdf-status { grid-column: 1 / -1; font-size: 13px; color: var(--muted); overflow-wrap: anywhere; }
+.resource-actions .resource-open[hidden] { display: none; }
+a.resource-open { text-decoration: none; }
 .resource-shared-label { grid-column: 1 / -1; font-size: 12px; font-weight: 700; color: var(--next-dark); }
 .resource-note { margin: 0; padding: 10px 32px; font-size: 14px; font-weight: 600; background: var(--upcoming); color: var(--muted); border-bottom: 1.5px solid var(--line); }
 .resource-note[hidden] { display: none; }

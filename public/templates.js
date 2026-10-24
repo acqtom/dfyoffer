@@ -24,7 +24,6 @@ function showToast(message) {
 const VIDEOS = [
   { key: 'complete-funnel', title: 'Complete your funnel', where: 'Weeks 1 & 2' },
   { key: 'film-ads', title: 'Film your ads', where: 'Weeks 1 & 2' },
-  { key: 'editor-sop', title: 'Editor SOP', where: 'Week 1 resources' },
 ];
 const LOOM_RE = /loom\.com\/(?:share|embed)\/[a-zA-Z0-9]+/;
 
@@ -194,8 +193,69 @@ Object.assign(RESOURCE_CONTENT, Object.fromEntries(
   Object.entries(PROMPT_DEFAULTS).map(([key, text]) => [`prompt-${key}`, text]),
 ));
 
-ResourceViewer.load('template').then(() => {
-  list.replaceChildren(...WEEK1_RESOURCES.map((resource) => {
+// ---- Shared PDFs (e.g. the Editor SOP) ------------------------------------------
+// Uploaded once here; every client downloads the same file from Week 1 resources.
+// Keys match FILE_KEYS on the server. Stored in the database, so 4 MB max.
+const SHARED_PDFS = [{ key: 'editor-sop', title: 'Editor SOP' }];
+const MAX_PDF_BYTES = 4 * 1024 * 1024;
+
+const formatSize = (bytes) => (bytes >= 1024 * 1024 ? `${(bytes / 1024 / 1024).toFixed(1)} MB` : `${Math.max(1, Math.round(bytes / 1024))} KB`);
+
+function pdfTile(pdf, current) {
+  const tile = el('div', 'resource resource-shared');
+  tile.append(ResourceViewer.icon('pdf'), el('strong', 'resource-title', pdf.title));
+  tile.append(el('span', 'resource-shared-label', 'Shared · every client sees your saved version'));
+  const status = el('span', 'pdf-status');
+  const actions = el('div', 'resource-actions');
+  const input = el('input');
+  input.type = 'file';
+  input.accept = 'application/pdf,.pdf';
+  input.hidden = true;
+  const upload = el('button', 'resource-prompt-btn', current ? 'Replace PDF' : 'Upload PDF');
+  upload.type = 'button';
+  upload.addEventListener('click', () => input.click());
+  const download = el('a', 'resource-open', 'Download →');
+  download.href = `/files/${pdf.key}`;
+  const show = (file) => {
+    status.textContent = file ? `${file.name} · ${formatSize(file.size)}` : 'No PDF yet — clients see "Coming soon"';
+    download.hidden = !file;
+    upload.textContent = file ? 'Replace PDF' : 'Upload PDF';
+  };
+  show(current);
+
+  input.addEventListener('change', async () => {
+    const file = input.files[0];
+    input.value = '';
+    if (!file) return;
+    if (file.size > MAX_PDF_BYTES) return showToast('That PDF is over 4 MB. Please use a smaller file.');
+    if (file.type && file.type !== 'application/pdf') return showToast('Please choose a PDF file.');
+    upload.disabled = true;
+    status.textContent = `Uploading ${file.name}…`;
+    try {
+      const res = await fetch(`/api/files/${pdf.key}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/pdf', 'X-File-Name': encodeURIComponent(file.name) },
+        body: file,
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Upload failed. Please try again.');
+      show(data);
+      showToast(`"${pdf.title}" PDF saved for every client`);
+    } catch (err) {
+      show(current);
+      showToast(err.message);
+    } finally {
+      upload.disabled = false;
+    }
+  });
+
+  actions.append(download, upload);
+  tile.append(status, actions, input);
+  return tile;
+}
+
+Promise.all([ResourceViewer.load('template'), fetch('/api/files').then((r) => r.json())]).then(([, { files }]) => {
+  const resourceItems = WEEK1_RESOURCES.map((resource) => {
     const item = document.createElement('li');
     // Every resource except the shared one has a prompt.
     const prompt = SHARED_RESOURCES.has(resource.key)
@@ -203,7 +263,13 @@ ResourceViewer.load('template').then(() => {
       : { key: `prompt-${resource.key}`, title: `${resource.title} prompt`, kind: 'prompt' };
     item.append(ResourceViewer.tile(resource, { prompt }));
     return item;
-  }));
+  });
+  const pdfItems = SHARED_PDFS.map((pdf) => {
+    const item = document.createElement('li');
+    item.append(pdfTile(pdf, files[pdf.key]));
+    return item;
+  });
+  list.replaceChildren(...resourceItems, ...pdfItems);
 });
 
 loadVideoSettings();

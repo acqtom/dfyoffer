@@ -45,8 +45,8 @@ function phasesFor(daysInMonth) {
       goal: 'Cold Funnel Set Up Complete, New Ad Scripts Ready',
       resources: [
         ...WEEK1_RESOURCES,
-        // A how-to video set by staff on Templates (Loom link or embed code).
-        { key: 'editor-sop', title: 'Editor SOP', kind: 'video', type: 'video', video: 'editor-sop' },
+        // A PDF staff upload on Templates; clients download it.
+        { key: 'editor-sop', title: 'Editor SOP', kind: 'pdf', type: 'file' },
       ],
       weDo: WEEK1_RESOURCES.map((r) => ({ key: `build-${r.key}`, title: r.title })),
       actions: BUILD_ACTIONS,
@@ -380,9 +380,9 @@ function renderResources(resources) {
       list.append(item);
       continue;
     }
-    if (resource.type === 'video') {
+    if (resource.type === 'file') {
       const item = el('li');
-      item.append(renderVideoResource(resource));
+      item.append(renderFileResource(resource));
       list.append(item);
       continue;
     }
@@ -393,15 +393,22 @@ function renderResources(resources) {
   box.replaceChildren(list);
 }
 
-// A resource that's a how-to video: opens the video pop-up.
-function renderVideoResource(resource) {
-  const ready = Boolean(videoLinks[resource.video]);
-  const tile = el(ready ? 'button' : 'div', 'resource');
+// PDFs staff uploaded on Templates (shared by every client).
+const sharedFiles = {};
+
+async function loadFiles() {
+  const res = await fetch('/api/files');
+  Object.assign(sharedFiles, (await res.json()).files);
+}
+
+// A resource that's a shared PDF: the whole tile downloads it.
+function renderFileResource(resource) {
+  const file = sharedFiles[resource.key];
+  const tile = el(file ? 'a' : 'div', 'resource');
   tile.append(ResourceViewer.icon(resource.kind), el('strong', 'resource-title', resource.title));
-  if (ready) {
-    tile.type = 'button';
-    tile.addEventListener('click', () => openVideo(resource.title, resource.video));
-    tile.append(el('span', 'resource-open', 'View SOP →'));
+  if (file) {
+    tile.href = `/files/${resource.key}`;
+    tile.append(el('span', 'resource-open', 'Download PDF →'));
   } else {
     tile.append(el('span', 'pill pill-upcoming', 'Coming soon'));
   }
@@ -685,5 +692,5 @@ apiFetch('/api/me')
     renderMonthPicker(user);
     render(user);
     // Progress depends on action items, so re-render once they're loaded.
-    Promise.all([Forms.loadAll(), loadActions(), ResourceViewer.load('client'), loadVideos()]).then(() => render(user)).catch(() => {});
+    Promise.all([Forms.loadAll(), loadActions(), ResourceViewer.load('client'), loadVideos(), loadFiles()]).then(() => render(user)).catch(() => {});
   });
