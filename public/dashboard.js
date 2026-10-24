@@ -1,11 +1,13 @@
-// The program runs for one calendar month (the user's cohort month).
-// startDay/endDay are 1-based and inclusive. Weeks are 7-day blocks from day 1;
-// Onboarding happens on day 1 (inside Week 1) and is shown as a milestone flag
-// rather than its own timeline block. The last stage runs from day 22 to the end
-// of the month: Week 4, finishing with the Performance Call on the last day.
+// The program runs from sign-up to the end of the cohort month.
+// Days are numbered from the cohort month: day 1 is the 1st, day 0 the day
+// before, -1 the day before that, and so on. startDay/endDay are inclusive.
+//   Onboarding + Offer Translation Report: sign-up day → 2 days later (48 hours)
+//   Build:                                 the day after → the day before the 1st
+//   Sprint · Days 1–14:                    1st → 14th
+//   Sprint · Days 15–end + Performance Call: 15th → end of the month
 
-// The client's build tasks, shown in both Week 1 and Week 2 (due by day 14).
-// Same keys in both weeks, so ticking one ticks it in both.
+// The client's build tasks, shown in both Build and Sprint · Days 1–14 (due by
+// day 14). Same keys in both stages, so ticking one ticks it in both.
 const BUILD_ACTIONS = [
   { key: 'film-videos', title: 'Film your VSL, confirmation page video, and FAQ videos' },
   {
@@ -18,7 +20,7 @@ const BUILD_ACTIONS = [
   { key: 'film-ads', title: 'Film your ads', button: 'Watch how to', video: 'film-ads' },
 ];
 
-// What we do in Weeks 3 and 4.
+// What we do in Sprint · Days 15–end.
 const OPTIMISE_STEPS = [
   { key: 'review-sales', title: 'Review your sales process' },
   { key: 'improve-metrics', title: 'Show you how to improve sales metrics' },
@@ -27,10 +29,16 @@ const OPTIMISE_STEPS = [
   { key: 'double-down', title: 'Double down on winning ads' },
 ];
 
-function phasesFor(daysInMonth) {
+// signupDay: the day the account was created, numbered as above.
+function phasesFor(daysInMonth, signupDay) {
+  // Onboarding and Build must finish before the 1st. Someone who signs up a day
+  // or two before (or whose cohort is moved earlier) gets them squeezed in.
+  const onboardStart = Math.min(signupDay, -1);
+  const onboardEnd = Math.min(onboardStart + 2, -1);
   return [
-    { name: 'Onboarding',       call: 'Onboarding call', short: 'Start', startDay: 1,  endDay: 1,  milestone: true,
-      goal: 'Funnel Audit & Onboarding',
+    { name: 'Onboarding + Offer Translation Report', timelineName: 'Onboarding', short: 'Start', call: 'Onboarding call',
+      startDay: onboardStart, endDay: onboardEnd,
+      goal: 'Funnel Audit, Onboarding & Offer Translation Report',
       form: { key: 'onboarding', title: 'Fill your form', minutes: 5 },
       actions: [
         { key: 'join-slack', title: 'Join the Slack', subtitle: 'Join, then tick the box once you\u2019re in',
@@ -41,7 +49,7 @@ function phasesFor(daysInMonth) {
         { key: 'review-funnel', title: 'Audit your funnel and offer' },
         { key: 'private-slack', title: 'Make your private Slack chat' },
       ] },
-    { name: 'Week 1',           call: 'End-of-week call', short: 'W1',    startDay: 1,  endDay: 7,
+    { name: 'Build', short: 'Build', call: 'End-of-build call', startDay: onboardEnd + 1, endDay: 0,
       goal: 'Cold Funnel Set Up Complete, New Ad Scripts Ready',
       resources: [
         ...WEEK1_RESOURCES,
@@ -51,7 +59,7 @@ function phasesFor(daysInMonth) {
       weDo: WEEK1_RESOURCES.map((r) => ({ key: `build-${r.key}`, title: r.title })),
       actions: BUILD_ACTIONS,
       actionsNote: 'Due by day 14, no rush!' },
-    { name: 'Week 2',           call: 'End-of-week call', short: 'W2',    startDay: 8,  endDay: 14,
+    { name: 'Sprint · Days 1–14', short: 'D1–14', call: 'Day 14 call', startDay: 1, endDay: 14,
       goal: 'Ads Live',
       resources: [
         { key: 'drive-folder', title: 'Google Drive folder', kind: 'folder', type: 'link',
@@ -64,16 +72,14 @@ function phasesFor(daysInMonth) {
         { key: 'ads-live', title: 'Ads live' },
       ],
       actions: BUILD_ACTIONS },
-    { name: 'Week 3',           call: 'End-of-week call', short: 'W3',    startDay: 15, endDay: 21,
-      goal: 'Closes Begin, Double Down On Winning Ads',
+    { name: `Sprint · Days 15–${daysInMonth} + Performance Call`, short: `D15–${daysInMonth}`, call: 'Performance call',
+      startDay: 15, endDay: daysInMonth, wide: true,
+      goal: 'Closes Begin → More Closes, Profitable Campaign Ready To Scale',
+      blurb: 'Review results and plan next steps.',
       weDo: OPTIMISE_STEPS.map((step) => ({ ...step })),
-      form: { key: 'midweek', title: 'Fill this form mid week', minutes: 2 } },
-    { name: 'Week 4 + Performance Call', call: 'Performance call', short: 'W4', startDay: 22, endDay: daysInMonth, wide: true,
-      goal: 'More Closes, Profitable Campaign Ready To Scale', blurb: 'Review results and plan next steps.',
-      // Same steps as Week 3, tracked separately (w4- keys) so they start fresh.
-      weDo: OPTIMISE_STEPS.map((step) => ({ ...step, key: `w4-${step.key}` })),
       form: [
-        { key: 'final-checkin', title: 'Fill this form mid week', minutes: 3 },
+        { key: 'midweek', title: 'Fill this form mid week', minutes: 2 },
+        { key: 'final-checkin', title: 'Fill the final check-in form', minutes: 3 },
         { key: 'service-feedback', title: 'Service feedback form', minutes: 2 },
       ] },
   ];
@@ -86,7 +92,7 @@ const fmt = new Intl.DateTimeFormat(undefined, { month: 'short', day: 'numeric' 
 const fmtMonth = new Intl.DateTimeFormat(undefined, { month: 'long', year: 'numeric' });
 const fmtCall = new Intl.DateTimeFormat(undefined, { weekday: 'short', day: 'numeric', month: 'short' });
 
-// Onboarding has a call on day 1 and each week ends with a call on its last day.
+// Each stage ends with a call on its last day.
 const CALL_LINK = 'https://meet.google.com/wkv-ifex-upa';
 
 function el(tag, className, text) {
@@ -227,14 +233,15 @@ function render(user) {
   const start = parseMonth(user.programMonth);
   const daysInMonth = new Date(start.getFullYear(), start.getMonth() + 1, 0).getDate();
   const end = new Date(start.getFullYear(), start.getMonth(), daysInMonth);
-  const phases = phasesFor(daysInMonth);
+  // Day number (1 = the 1st of the cohort month) for a date.
+  const dayOf = (date) => Math.round((new Date(date.getFullYear(), date.getMonth(), date.getDate()) - start) / DAY_MS) + 1;
+  const phases = phasesFor(daysInMonth, dayOf(new Date(user.createdAt)));
+  const firstDay = phases[0].startDay;
   const dateFor = (day) => new Date(start.getFullYear(), start.getMonth(), day);
 
-  // rawDay < 1 means the program hasn't started; > daysInMonth means it's over.
-  const now = new Date();
-  const todayMidnight = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-  const rawDay = Math.round((todayMidnight - start) / DAY_MS) + 1;
-  const today = Math.min(Math.max(rawDay, 0), daysInMonth + 1);
+  // rawDay < 1: still in onboarding/build; > daysInMonth: the program is over.
+  const rawDay = dayOf(new Date());
+  const today = Math.min(Math.max(rawDay, firstDay - 1), daysInMonth + 1);
   const statuses = phaseStatuses(phases, today);
 
   document.getElementById('user-name').textContent = user.name;
@@ -245,16 +252,17 @@ function render(user) {
   badge.classList.toggle('is-upcoming', rawDay < 1);
   if (rawDay < 1) {
     const daysLeft = 1 - rawDay;
-    badge.textContent = `Starts in ${daysLeft} day${daysLeft === 1 ? '' : 's'}`;
+    badge.textContent = `Sprint starts in ${daysLeft} day${daysLeft === 1 ? '' : 's'}`;
   } else if (rawDay > daysInMonth) {
     badge.textContent = 'Program complete';
   } else {
-    badge.textContent = `Day ${rawDay} of ${daysInMonth}`;
+    badge.textContent = `Sprint day ${rawDay} of ${daysInMonth}`;
   }
 
-  const pct = Math.min(Math.max(rawDay, 0) / daysInMonth, 1);
-  document.getElementById('progress-label').textContent =
-    rawDay < 1 ? `Starts ${fmt.format(start)}` : `${Math.round(pct * 100)}% through`;
+  // How far through the whole program (sign-up to the end of the month).
+  const totalDays = daysInMonth - firstDay + 1;
+  const pct = Math.min(Math.max(today - firstDay, 0) / totalDays, 1);
+  document.getElementById('progress-label').textContent = `${Math.round(pct * 100)}% through`;
 
   // Timeline segments
   const track = document.getElementById('timeline-track');
@@ -269,7 +277,7 @@ function render(user) {
     seg.title = `${phase.name}: ${range}`;
     seg.dataset.start = phase.startDay;
     seg.dataset.span = span;
-    seg.append(el('span', 'segment-name', phase.name), el('span', 'segment-short', phase.short), el('span', 'segment-dates', range));
+    seg.append(el('span', 'segment-name', phase.timelineName ?? phase.name), el('span', 'segment-short', phase.short), el('span', 'segment-dates', range));
     track.append(seg);
   }
 
@@ -292,11 +300,16 @@ function render(user) {
 
   // Today marker sits in the middle of the current day within the current segment.
   const marker = document.getElementById('timeline-today');
-  const inProgram = rawDay >= 1 && rawDay <= daysInMonth;
+  const inProgram = rawDay >= firstDay && rawDay <= daysInMonth;
   marker.hidden = !inProgram;
   placeMarker = () => {
     for (const flag of flags) flag.style.left = `${xForDay(+flag.dataset.day)}px`;
-    if (inProgram) marker.style.left = `${xForDay(today)}px`;
+    if (inProgram) {
+      const x = xForDay(today);
+      marker.style.left = `${x}px`;
+      // Near the left edge the centred "Today" tag would be cut off.
+      marker.classList.toggle('timeline-today-start', x < 40);
+    }
   };
   placeMarker();
 

@@ -22,8 +22,8 @@ function showToast(message) {
 // Embedded videos show on client pages as "View SOP". Keys match VIDEO_KEYS on the server and the
 // `video` on each action in dashboard.js.
 const VIDEOS = [
-  { key: 'complete-funnel', title: 'Complete your funnel', where: 'Weeks 1 & 2' },
-  { key: 'film-ads', title: 'Film your ads', where: 'Weeks 1 & 2' },
+  { key: 'complete-funnel', title: 'Complete your funnel', where: 'Build & Sprint Days 1–14' },
+  { key: 'film-ads', title: 'Film your ads', where: 'Build & Sprint Days 1–14' },
 ];
 const LOOM_RE = /loom\.com\/(?:share|embed)\/[a-zA-Z0-9]+/;
 
@@ -194,7 +194,7 @@ Object.assign(RESOURCE_CONTENT, Object.fromEntries(
 ));
 
 // ---- Shared PDFs (e.g. the Editor SOP) ------------------------------------------
-// Uploaded once here; every client downloads the same file from Week 1 resources.
+// Uploaded once here; every client downloads the same file from the Build stage's resources.
 // Keys match FILE_KEYS on the server. Stored in the database, so 4 MB max.
 const SHARED_PDFS = [{ key: 'editor-sop', title: 'Editor SOP' }];
 const MAX_PDF_BYTES = 4 * 1024 * 1024;

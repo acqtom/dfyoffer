@@ -305,6 +305,10 @@ h1, h2, h3 { margin: 0; font-family: var(--heading); font-weight: 800; letter-sp
 }
 
 .timeline-milestones { position: relative; height: 44px; }
+/* No milestone flags: drop the empty row and run the Today line to the track. */
+.timeline-milestones:empty { display: none; }
+.timeline-today-start span { left: 0; transform: translateX(-6px); }
+.timeline:has(.timeline-milestones:empty) .timeline-today { bottom: -6px; }
 .milestone {
   position: absolute;
   top: 14px;
@@ -382,7 +386,7 @@ h1, h2, h3 { margin: 0; font-family: var(--heading); font-weight: 800; letter-sp
   .card-current .card-cta-arrow { animation: none; }
   .card, .card-cta-arrow { transition: none; }
 }
-.card-wide { grid-column: span 2; }
+.card-wide { grid-column: 1 / -1; }
 .card-current { box-shadow: 6px 6px 0 var(--brand); }
 .card-current:hover, .card-current:focus-visible { box-shadow: 9px 9px 0 var(--brand); }
 .card-head { display: flex; justify-content: space-between; align-items: center; }
@@ -1086,6 +1090,7 @@ a.resource-open { text-decoration: none; }
 @media (max-width: 900px) {
   .cards { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .client-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .card-wide { grid-column: auto; }
   .segment { min-width: 80px; }
   .segment-dates { display: none; }
   .hub-head h1 { font-size: 36px; }

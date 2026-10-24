@@ -27,7 +27,7 @@
     { id: 'likes',      type: 'long', label: 'What do people really like?', placeholder: ANSWER_PLACEHOLDER },
   ];
 
-  // Week 4: the mid-week questions plus show rate, close rate, AOV and cash collected.
+  // Final check-in (Sprint · Days 15–end): the mid-week questions plus show rate, close rate, AOV and cash collected.
   const FINAL_QUESTIONS = [
     ...MIDWEEK_QUESTIONS,
     { id: 'show_rate', type: 'text', label: "What's your show rate?", placeholder: 'e.g. 70%' },
@@ -47,7 +47,7 @@
   const FORMS = {
     onboarding: { title: 'Your onboarding form', questions: ONBOARDING_QUESTIONS },
     midweek:    { title: 'Your mid-week check-in', questions: MIDWEEK_QUESTIONS },
-    'final-checkin': { title: 'Your Week 4 check-in', questions: FINAL_QUESTIONS },
+    'final-checkin': { title: 'Your final check-in', questions: FINAL_QUESTIONS },
     'service-feedback': { title: 'Your service feedback', questions: FEEDBACK_QUESTIONS },
   };
   // Answer keys a question stores (a links question stores one per field).

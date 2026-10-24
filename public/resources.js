@@ -1,4 +1,4 @@
-// Week 1's resources. Each one's default text is in RESOURCE_CONTENT or
+// The Build stage's resources. Each one's default text is in RESOURCE_CONTENT or
 // RESOURCE_SECTIONS below, under its key.
 window.WEEK1_RESOURCES = [
   { key: 'main-page-code',           title: 'Main page code',           kind: 'code' },
