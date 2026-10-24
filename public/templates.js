@@ -281,7 +281,12 @@ function pdfTile(pdf, current) {
 Promise.all([ResourceViewer.load('template'), fetch('/api/files').then((r) => r.json())]).then(([, { files }]) => {
   const resourceItems = WEEK1_RESOURCES.map((resource) => {
     const item = document.createElement('li');
-    // Every resource except the shared one has a prompt.
+    // Shared PDFs (e.g. the FAQ video script formula) get an upload tile.
+    if (resource.type === 'file') {
+      item.append(pdfTile(resource, files[resource.key]));
+      return item;
+    }
+    // Every other resource except shared text ones has a prompt.
     const prompt = SHARED_RESOURCES.has(resource.key)
       ? undefined
       : { key: `prompt-${resource.key}`, title: `${resource.title} prompt`, kind: 'prompt' };

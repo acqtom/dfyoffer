@@ -6,7 +6,8 @@ window.WEEK1_RESOURCES = [
   { key: 'vsl-script',               title: 'VSL script',               kind: 'doc' },
   { key: 'ad-scripts',               title: '10x ad scripts',           kind: 'doc' },
   { key: 'confirmation-page-script', title: 'Confirmation page script', kind: 'doc' },
-  { key: 'faq-video-script',         title: 'FAQ video script formula', kind: 'doc' },
+  // A PDF staff upload on Templates; every client downloads the same file.
+  { key: 'faq-video-script',         title: 'FAQ video script formula', kind: 'pdf', type: 'file' },
 ];
 
 // Onboarding's resources: the offer translation report staff write for each
@@ -21,9 +22,9 @@ window.SCALE_RESOURCES = [
   { key: 'scaling-roadmap', title: 'Scaling roadmap', kind: 'doc', label: 'Roadmap', openLabel: 'Read roadmap →' },
 ];
 
-// Resources every client sees the same version of. Staff edit them on the
-// Templates page; on client pages they're read-only.
-window.SHARED_RESOURCES = new Set(['faq-video-script']);
+// Text resources every client sees the same version of. Staff edit them on the
+// Templates page; on client pages they're read-only. (None at the moment.)
+window.SHARED_RESOURCES = new Set();
 
 // Resources shown as separate boxes, each with its own copy button.
 // Users fill them in with Edit; until then the boxes are empty.
@@ -131,19 +132,4 @@ window.RESOURCE_CONTENT = {
 4. SHOW-UP REMINDER
 [Add it to your calendar and show up on time.]`,
 
-  'faq-video-script': `PLACEHOLDER — replace with the real FAQ video script formula
-
-FOR EACH QUESTION:
-
-1. THE QUESTION
-[State the objection exactly how prospects say it.]
-
-2. THE SHORT ANSWER
-[One or two sentences that resolve it.]
-
-3. THE PROOF
-[A client example that backs the answer up.]
-
-4. THE NEXT STEP
-[Point them back to booking or attending their call.]`,
 };
