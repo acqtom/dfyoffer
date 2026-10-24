@@ -237,7 +237,8 @@ window.ResourceViewer = (() => {
       node.append(icon(resource.kind), el('strong', 'resource-title', resource.title), actions);
       return node;
     }
-    const content = sectionsDef(resource.key) || resourceText(resource.key);
+    // An empty document (e.g. a report not written yet) still opens, so staff can Edit it.
+    const content = sectionsDef(resource.key) || resourceText(resource.key) !== undefined;
     const shared = mode === 'template' && isShared(resource.key);
     const node = el(content ? 'button' : 'div', shared ? 'resource resource-shared' : 'resource');
     if (content) {

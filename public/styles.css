@@ -334,6 +334,8 @@ h1, h2, h3 { margin: 0; font-family: var(--heading); font-weight: 800; letter-sp
 }
 .milestone-name { font-family: var(--heading); font-weight: 800; }
 .milestone-day { color: var(--muted); }
+.milestone-end { transform: translateX(calc(-100% + 14px)); }
+.milestone-end::before { left: auto; right: 13px; }
 .milestone-done { background: var(--done-soft); color: var(--done); }
 .milestone-current { background: var(--brand); color: #fff; }
 .milestone-next { background: var(--next-soft); color: var(--next); border-color: var(--next); }
@@ -386,7 +388,7 @@ h1, h2, h3 { margin: 0; font-family: var(--heading); font-weight: 800; letter-sp
   .card-current .card-cta-arrow { animation: none; }
   .card, .card-cta-arrow { transition: none; }
 }
-.card-wide { grid-column: 1 / -1; }
+.card-wide { grid-column: span 2; }
 .card-current { box-shadow: 6px 6px 0 var(--brand); }
 .card-current:hover, .card-current:focus-visible { box-shadow: 9px 9px 0 var(--brand); }
 .card-head { display: flex; justify-content: space-between; align-items: center; }
@@ -718,6 +720,7 @@ button.resource:hover .resource-open { text-decoration: underline; }
   white-space: pre-wrap;
   overflow-wrap: anywhere;
 }
+.resource-body-doc:empty::before { content: 'Nothing here yet — your team will add this soon.'; color: var(--muted); }
 .resource-body:focus-visible { outline: 3px solid var(--brand-soft); outline-offset: -3px; }
 .resource-body-doc { font-family: "Inter", sans-serif; font-size: 17px; line-height: 1.7; color: var(--ink); background: var(--surface); }
 .resource-body-code {
@@ -1092,6 +1095,8 @@ a.resource-open { text-decoration: none; }
   .cards { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .client-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .card-wide { grid-column: auto; }
+  /* An odd last card fills its row. */
+  .cards > .card:last-child:nth-child(odd) { grid-column: 1 / -1; }
   .segment { min-width: 80px; }
   .segment-dates { display: none; }
   .hub-head h1 { font-size: 36px; }

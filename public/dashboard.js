@@ -3,8 +3,11 @@
 // before, -1 the day before that, and so on. startDay/endDay are inclusive.
 //   Onboarding + Offer Translation Report: sign-up day → 2 days later (48 hours)
 //   Build:                                 the day after → the day before the 1st
-//   Sprint · Days 1–14:                    1st → 14th
-//   Sprint · Days 15–end + Performance Call: 15th → end of the month
+//   Sprint · Days 1–14:                    1st → 14th (kickoff call on the 1st)
+//   Sprint · Days 15–end:                  15th → end of the month (call on the 14th)
+//   Performance & Scale Call:              the last day — a flag on the timeline,
+//                                          since it falls inside the stage before
+// Each stage's call is on its callDay, or its last day if it has none.
 
 // The client's build tasks, shown in both Build and Sprint · Days 1–14 (due by
 // day 14). Same keys in both stages, so ticking one ticks it in both.
@@ -61,7 +64,7 @@ function phasesFor(daysInMonth, signupDay) {
       weDo: WEEK1_RESOURCES.map((r) => ({ key: `build-${r.key}`, title: r.title })),
       actions: BUILD_ACTIONS,
       actionsNote: 'Due by day 14, no rush!' },
-    { name: 'Sprint · Days 1–14', short: 'D1–14', call: 'Day 14 call', startDay: 1, endDay: 14,
+    { name: 'Sprint · Days 1–14', short: 'D1–14', call: 'Sprint kickoff call', callDay: 1, startDay: 1, endDay: 14,
       goal: 'Ads Live',
       resources: [
         { key: 'drive-folder', title: 'Google Drive folder', kind: 'folder', type: 'link',
@@ -74,13 +77,18 @@ function phasesFor(daysInMonth, signupDay) {
         { key: 'ads-live', title: 'Ads live' },
       ],
       actions: BUILD_ACTIONS },
-    { name: `Sprint · Days 15–${daysInMonth} + Performance Call`, short: `D15–${daysInMonth}`, call: 'Performance call',
+    { name: `Sprint · Days 15–${daysInMonth}`, short: `D15–${daysInMonth}`, call: 'Day 14 call', callDay: 14,
       startDay: 15, endDay: daysInMonth, wide: true,
-      goal: 'Closes Begin → More Closes, Profitable Campaign Ready To Scale',
-      blurb: 'Review results and plan next steps.',
+      goal: 'Closes Begin, Double Down On Winning Ads',
       weDo: OPTIMISE_STEPS.map((step) => ({ ...step })),
+      form: { key: 'midweek', title: 'Fill this form mid week', minutes: 2 } },
+    { name: 'Performance & Scale Call', short: 'Scale', call: 'Performance & scale call',
+      startDay: daysInMonth, endDay: daysInMonth, milestone: true,
+      goal: 'More Closes, Profitable Campaign Ready To Scale',
+      blurb: 'Review results and plan next steps.',
+      resources: SCALE_RESOURCES,
+      weDo: [{ key: 'scaling-roadmap', title: 'Make your scaling roadmap' }],
       form: [
-        { key: 'midweek', title: 'Fill this form mid week', minutes: 2 },
         { key: 'final-checkin', title: 'Fill the final check-in form', minutes: 3 },
         { key: 'service-feedback', title: 'Service feedback form', minutes: 2 },
       ] },
@@ -113,14 +121,14 @@ function monthKey(date) {
   return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
 }
 
-// Onboarding counts as in progress from signup until the end of day 1, even
-// before the cohort starts. The first stage that hasn't started is "next".
+// A stage is done after its last day and in progress from its first. The first
+// stage that hasn't started is "next".
 function phaseStatuses(phases, today) {
   const statuses = new Map();
   for (const phase of phases) {
     let status = 'upcoming';
     if (today > phase.endDay) status = 'done';
-    else if (today >= phase.startDay || phase.milestone) status = 'current';
+    else if (today >= phase.startDay) status = 'current';
     statuses.set(phase, status);
   }
   const next = phases.find((p) => statuses.get(p) === 'upcoming');
@@ -288,7 +296,7 @@ function render(user) {
   milestoneRow.replaceChildren();
   const flags = phases.filter((p) => p.milestone).map((phase) => {
     const flag = el('div', `milestone milestone-${statuses.get(phase)}`);
-    flag.append(el('span', 'milestone-name', phase.name), el('span', 'milestone-day', `Day ${phase.startDay}`));
+    flag.append(el('span', 'milestone-name', phase.name), el('span', 'milestone-day', fmt.format(dateFor(phase.startDay))));
     flag.dataset.day = phase.startDay;
     milestoneRow.append(flag);
     return flag;
@@ -305,7 +313,12 @@ function render(user) {
   const inProgram = rawDay >= firstDay && rawDay <= daysInMonth;
   marker.hidden = !inProgram;
   placeMarker = () => {
-    for (const flag of flags) flag.style.left = `${xForDay(+flag.dataset.day)}px`;
+    for (const flag of flags) {
+      const x = xForDay(+flag.dataset.day);
+      flag.style.left = `${x}px`;
+      // Near the right edge, hang the flag to the left of its stem.
+      flag.classList.toggle('milestone-end', x > track.offsetWidth - 220);
+    }
     if (inProgram) {
       const x = xForDay(today);
       marker.style.left = `${x}px`;
@@ -340,7 +353,7 @@ function render(user) {
     const cta = el('div', 'card-cta');
     cta.append(el('span', null, CTA_LABEL[status]), el('span', 'card-cta-arrow', '→'));
 
-    const callDate = phase.call ? fmtCall.format(dateFor(phase.endDay)) : null;
+    const callDate = phase.call ? fmtCall.format(dateFor(phase.callDay ?? phase.endDay)) : null;
     card.append(head, el('h3', null, phase.name), el('p', 'card-dates', dates));
     if (phase.goal) card.append(el('p', 'card-goal', phase.goal));
     if (phase.blurb) card.append(el('p', 'card-blurb', phase.blurb));

@@ -139,6 +139,18 @@ async function loadVideoSettings() {
 // Default text for each resource's prompt until staff save their own.
 // Placeholders — replace them with the real prompts via Edit.
 const PROMPT_DEFAULTS = {
+  'scaling-roadmap': `PLACEHOLDER — replace with your real prompt
+
+Write a scaling roadmap for this client using their final check-in.
+
+Client numbers:
+- Calls taken: [calls]
+- Show rate: [show_rate]
+- Close rate: [close_rate]
+- AOV: [aov]
+- Cash collected since the 14th: [cash_since_14th]
+
+Sections: where they are now, what's working, what to fix first, the scaling plan, next 30 days.`,
   'offer-translation-report': `PLACEHOLDER — replace with your real prompt
 
 Write an offer translation report for this client using their onboarding form.
@@ -282,13 +294,16 @@ Promise.all([ResourceViewer.load('template'), fetch('/api/files').then((r) => r.
     return item;
   });
   list.replaceChildren(...resourceItems, ...pdfItems);
-  document.getElementById('onboarding-template-list').replaceChildren(...ONBOARDING_RESOURCES.map((resource) => {
+  // Per-client documents staff write: a starting template plus a prompt each.
+  const withPrompts = (resources) => resources.map((resource) => {
     const item = document.createElement('li');
     item.append(ResourceViewer.tile(resource, {
       prompt: { key: `prompt-${resource.key}`, title: `${resource.title} prompt`, kind: 'prompt' },
     }));
     return item;
-  }));
+  });
+  document.getElementById('onboarding-template-list').replaceChildren(...withPrompts(ONBOARDING_RESOURCES));
+  document.getElementById('scale-template-list').replaceChildren(...withPrompts(SCALE_RESOURCES));
 });
 
 loadVideoSettings();

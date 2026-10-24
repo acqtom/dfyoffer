@@ -15,6 +15,12 @@ window.ONBOARDING_RESOURCES = [
   { key: 'offer-translation-report', title: 'Offer translation report', kind: 'doc', label: 'Report', openLabel: 'Read report →' },
 ];
 
+// Performance & Scale Call resources: the scaling roadmap staff write for each
+// client (on the client's page, with Edit → Done).
+window.SCALE_RESOURCES = [
+  { key: 'scaling-roadmap', title: 'Scaling roadmap', kind: 'doc', label: 'Roadmap', openLabel: 'Read roadmap →' },
+];
+
 // Resources every client sees the same version of. Staff edit them on the
 // Templates page; on client pages they're read-only.
 window.SHARED_RESOURCES = new Set(['faq-video-script']);
@@ -41,28 +47,25 @@ window.RESOURCE_SECTIONS = {
 // replace each with the real script or code. Users can edit their own copy,
 // which is saved to their account.
 window.RESOURCE_CONTENT = {
-  'offer-translation-report': `PLACEHOLDER — your team will fill in your offer translation report
+  'scaling-roadmap': `PLACEHOLDER — your team will fill in your scaling roadmap
 
-1. YOUR OFFER, IN ONE SENTENCE
-[What you sell, who it's for and the result it gets.]
+1. WHERE YOU ARE NOW
+[Ad spend, show rate, close rate, AOV, cash collected and ROAS.]
 
-2. WHO IT'S FOR
-[The ideal client: their situation, what they want, what's in the way.]
+2. WHAT'S WORKING
+[Winning ads, angles and parts of the funnel to double down on.]
 
-3. THE BIG PROMISE
-[The main outcome, in your client's words.]
+3. WHAT TO FIX FIRST
+[The biggest bottleneck and how we'll fix it.]
 
-4. YOUR MECHANISM
-[Why your way works when other things haven't.]
+4. YOUR SCALING PLAN
+[Budget steps, timeline and the numbers to hit at each step.]
 
-5. PROOF
-[Results, case studies and numbers to lead with.]
+5. NEXT 30 DAYS
+[The exact actions for you and for us.]`,
 
-6. OBJECTIONS — AND HOW WE ANSWER THEM
-[Main reasons people don't move forward, with the answer to each.]
-
-7. ANGLES FOR ADS
-[Hooks and angles we'll test in your ads.]`,
+  // Starts empty; staff write each client's report.
+  'offer-translation-report': '',
 
   'main-page-code': `<!-- PLACEHOLDER: replace with the real main page code -->
 <!doctype html>
