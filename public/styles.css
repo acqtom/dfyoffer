@@ -906,6 +906,7 @@ button.resource:hover .resource-open { text-decoration: underline; }
 .admin-tabs .tag-ghost:hover { background: var(--brand-soft); }
 .admin .hub-head .muted { max-width: 720px; }
 .templates-panel .resource-list { margin-top: 0; }
+.templates-panel + .templates-panel { margin-top: 24px; }
 .resource.resource-shared { background: var(--next-soft); border-color: var(--next); }
 .resource-shared .resource-icon { background: var(--surface); color: var(--next); }
 .resource-shared .resource-open { color: var(--next-dark); }

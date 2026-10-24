@@ -139,6 +139,18 @@ async function loadVideoSettings() {
 // Default text for each resource's prompt until staff save their own.
 // Placeholders — replace them with the real prompts via Edit.
 const PROMPT_DEFAULTS = {
+  'offer-translation-report': `PLACEHOLDER — replace with your real prompt
+
+Write an offer translation report for this client using their onboarding form.
+
+Client details:
+- Niche: [niche]
+- Offer: [offer]
+- Main objections: [objections]
+- What people love (aha moments): [aha]
+- Why choose them: [why_you]
+
+Sections: offer in one sentence, who it's for, the big promise, mechanism, proof, objections and answers, angles for ads.`,
   'main-page-code': `PLACEHOLDER — replace with your real prompt
 
 Build the main landing page for this client as a single HTML file.
@@ -270,6 +282,13 @@ Promise.all([ResourceViewer.load('template'), fetch('/api/files').then((r) => r.
     return item;
   });
   list.replaceChildren(...resourceItems, ...pdfItems);
+  document.getElementById('onboarding-template-list').replaceChildren(...ONBOARDING_RESOURCES.map((resource) => {
+    const item = document.createElement('li');
+    item.append(ResourceViewer.tile(resource, {
+      prompt: { key: `prompt-${resource.key}`, title: `${resource.title} prompt`, kind: 'prompt' },
+    }));
+    return item;
+  }));
 });
 
 loadVideoSettings();

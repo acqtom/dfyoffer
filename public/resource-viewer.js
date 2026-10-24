@@ -18,6 +18,7 @@ window.ResourceViewer = (() => {
     prompt: '<path d="M12 3l1.9 5.1L19 10l-5.1 1.9L12 17l-1.9-5.1L5 10l5.1-1.9z"/><path d="M19 15l.8 2.2L22 18l-2.2.8L19 21l-.8-2.2L16 18l2.2-.8z"/>',
   };
   const KIND_LABELS = { code: 'Code', doc: 'Script', prompt: 'Prompt' };
+  const openLabel = (resource) => resource.openLabel || (resource.kind === 'code' ? 'View code →' : 'Read script →');
 
   const el = (tag, className, text) => {
     const node = document.createElement(tag);
@@ -193,7 +194,7 @@ window.ResourceViewer = (() => {
     openResourceKey = resource.key;
     const structured = Boolean(sectionsDef(resource.key));
     document.getElementById('resource-icon').replaceChildren(icon(resource.kind));
-    document.getElementById('resource-kind').textContent = KIND_LABELS[resource.kind];
+    document.getElementById('resource-kind').textContent = resource.label || KIND_LABELS[resource.kind];
     document.getElementById('resource-title').textContent = resource.title;
     resourceSections.hidden = !structured;
     resourceBody.hidden = structured;
@@ -226,7 +227,7 @@ window.ResourceViewer = (() => {
     if (prompt) {
       const node = el('div', 'resource');
       const actions = el('div', 'resource-actions');
-      const openBtn = el('button', 'resource-open resource-open-btn', resource.kind === 'code' ? 'View code →' : 'Read script →');
+      const openBtn = el('button', 'resource-open resource-open-btn', openLabel(resource));
       openBtn.type = 'button';
       openBtn.addEventListener('click', () => open(resource));
       const promptBtn = el('button', 'resource-prompt-btn', 'View prompt');
@@ -246,7 +247,7 @@ window.ResourceViewer = (() => {
     node.append(icon(resource.kind), el('strong', 'resource-title', resource.title));
     if (shared) node.append(el('span', 'resource-shared-label', 'Shared · every client sees your saved version'));
     node.append(content
-      ? el('span', 'resource-open', resource.kind === 'code' ? 'View code →' : 'Read script →')
+      ? el('span', 'resource-open', openLabel(resource))
       : el('span', 'pill pill-upcoming', 'Coming soon'));
     return node;
   }

@@ -9,6 +9,12 @@ window.WEEK1_RESOURCES = [
   { key: 'faq-video-script',         title: 'FAQ video script formula', kind: 'doc' },
 ];
 
+// Onboarding's resources: the offer translation report staff write for each
+// client (on the client's page, with Edit → Done).
+window.ONBOARDING_RESOURCES = [
+  { key: 'offer-translation-report', title: 'Offer translation report', kind: 'doc', label: 'Report', openLabel: 'Read report →' },
+];
+
 // Resources every client sees the same version of. Staff edit them on the
 // Templates page; on client pages they're read-only.
 window.SHARED_RESOURCES = new Set(['faq-video-script']);
@@ -35,6 +41,29 @@ window.RESOURCE_SECTIONS = {
 // replace each with the real script or code. Users can edit their own copy,
 // which is saved to their account.
 window.RESOURCE_CONTENT = {
+  'offer-translation-report': `PLACEHOLDER — your team will fill in your offer translation report
+
+1. YOUR OFFER, IN ONE SENTENCE
+[What you sell, who it's for and the result it gets.]
+
+2. WHO IT'S FOR
+[The ideal client: their situation, what they want, what's in the way.]
+
+3. THE BIG PROMISE
+[The main outcome, in your client's words.]
+
+4. YOUR MECHANISM
+[Why your way works when other things haven't.]
+
+5. PROOF
+[Results, case studies and numbers to lead with.]
+
+6. OBJECTIONS — AND HOW WE ANSWER THEM
+[Main reasons people don't move forward, with the answer to each.]
+
+7. ANGLES FOR ADS
+[Hooks and angles we'll test in your ads.]`,
+
   'main-page-code': `<!-- PLACEHOLDER: replace with the real main page code -->
 <!doctype html>
 <html lang="en">

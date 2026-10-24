@@ -40,6 +40,7 @@ function phasesFor(daysInMonth, signupDay) {
       startDay: onboardStart, endDay: onboardEnd,
       goal: 'Funnel Audit, Onboarding & Offer Translation Report',
       form: { key: 'onboarding', title: 'Fill your form', minutes: 5 },
+      resources: ONBOARDING_RESOURCES,
       actions: [
         { key: 'join-slack', title: 'Join the Slack', subtitle: 'Join, then tick the box once you\u2019re in',
           button: 'Join Slack →', href: SLACK_INVITE },
@@ -48,6 +49,7 @@ function phasesFor(daysInMonth, signupDay) {
         { key: 'review-form', title: 'Review your form info' },
         { key: 'review-funnel', title: 'Audit your funnel and offer' },
         { key: 'private-slack', title: 'Make your private Slack chat' },
+        { key: 'offer-report', title: 'Complete your offer translation report' },
       ] },
     { name: 'Build', short: 'Build', call: 'End-of-build call', startDay: onboardEnd + 1, endDay: 0,
       goal: 'Cold Funnel Set Up Complete, New Ad Scripts Ready',
